@@ -1,0 +1,44 @@
+[files.cargo_toml]
+path = "Cargo.toml"
+template = "Cargo.toml.tera"
+
+{% set_global modules = create_obj() -%}
+{% for schema in schemas -%}
+  {% set ns = schema.namespace | default(value="") -%}
+  {% if ns != "" -%}
+    {% set ns_segments = ns | split(pat=".") -%}
+    {% for i in range(end=ns_segments | length) -%}
+      {% set parent_mod = ns_segments | slice(end=i) | join(sep=".") -%}
+      {% set mod = ns_segments[i] -%}
+      {% set mods = modules | get(key=parent_mod, default=[]) | concat(with=mod) | unique -%}
+      {% set_global modules = modules | set_attr(key=parent_mod, val=mods) -%}
+    {% endfor -%}
+  {% endif -%}
+  {% if ns not in modules -%}
+    {% set_global modules = modules | set_attr(key=ns, val=[]) -%}
+  {% endif -%}
+{% endfor -%}
+
+[files.lib]
+path = "src/lib.rs"
+template = "mod.tera"
+params.modules = [
+{% for mod in modules | get(key="", default=[]) -%}
+  "{{ mod }}",
+{% endfor -%}
+]
+params.schema_namespace = ""
+
+{% for parent_mod, child_mods in modules -%}
+{% if parent_mod != "" -%}
+[[files.modules]]
+path = "src/{{ parent_mod | replace(from=".", to="/") }}.rs"
+template = "mod.tera"
+params.modules = [
+  {% for mod in child_mods -%}
+    "{{ mod }}",
+  {% endfor -%}
+]
+params.schema_namespace = "{{ parent_mod }}"
+{% endif -%}
+{% endfor -%}

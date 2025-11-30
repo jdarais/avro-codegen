@@ -1,0 +1,24 @@
+[package]
+name = "avro_codegen"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.81"
+
+[dependencies]
+anyhow = "1.0.95"
+apache-avro = "0.21.0"
+clap = { version = "4.5.23", features = ["derive"] }
+flate2 = "1.0.35"
+glob = "0.3.2"
+lazy_static = "1.5.0"
+rhai = { version = "1.23.6", features = ["only_i64", "serde"] }
+serde = "1.0.217"
+serde_json = "1.0.134"
+tar = "0.4.43"
+tera = "1.20.0"
+toml = "0.8.19"
+
+[build-dependencies]
+flate2 = "1.0.35"
+tar = "0.4.43"
+

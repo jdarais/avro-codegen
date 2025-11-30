@@ -1,0 +1,9 @@
+{
+    "type": "record",
+    "name": "RecordWithNamespace",
+    "namespace": "org.testorg.example",
+    "fields": [
+        { "name": "some_long", "type": "long" },
+        { "name": "test", "type": "org.testorg.test.TestRecord" }
+    ]
+}

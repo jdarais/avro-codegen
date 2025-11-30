@@ -1,0 +1,8 @@
+{
+    "type": "record",
+    "name": "TestRecord",
+    "namespace": "org.testorg.test",
+    "fields": [
+        { "name": "somefield", "type": "string" }
+    ]
+}

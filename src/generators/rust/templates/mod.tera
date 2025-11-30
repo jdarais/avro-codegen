@@ -1,0 +1,42 @@
+{% for mod in params.submodules -%}
+pub mod {{ mod }};
+{% endfor -%}
+
+{% macro render_record_field(name, schema) -%}
+{% set type = schema_type(schema=schema) -%}
+{% if type == "null" -%}
+    {# #}   pub {{ name }}: (),
+{% elif type == "boolean" -%}
+    {# #}   pub {{ name }}: bool,
+{% elif type == "int" -%}
+    {# #}    pub {{ name }}: i32,
+{% elif type == "long" -%}
+    {# #}    pub {{ name }}: i64,
+{% elif type == "float" -%}
+    {# #}    pub {{ name }}: f32,
+{% elif type == "double" -%}
+    {# #}    pub {{ name }}: f64,
+{% else -%}
+    {# #}    // {{ name }} is a {{ type }}
+{% endif -%}
+{% endmacro render_record_field -%}
+
+
+{% macro render_field(field) -%}
+
+{% endmacro render_field -%}
+
+
+
+
+{% for schema in params.schemas -%}
+{% if schema.schema.type == "record" -%}
+pub struct {{ schema.schema.name }} {
+{% for field in schema.schema.fields -%}
+{{ self::render_record_field(name=field.name, schema=field.type) }}
+{%- endfor -%}
+}
+{% endif -%}
+{% endfor -%}
+
+

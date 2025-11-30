@@ -1,0 +1,175 @@
+mod config;
+mod datamodel;
+mod generator;
+// mod lua_env;
+mod output_files;
+mod rhai_engine;
+mod tera_env;
+
+use std::env::set_current_dir;
+use std::fs::{create_dir_all, remove_dir_all, File};
+use std::io::Read;
+use std::path::{Path, PathBuf, MAIN_SEPARATOR_STR};
+use std::sync::Arc;
+
+use apache_avro::schema::Schema;
+use clap::{Parser, Subcommand};
+use tera::Context;
+
+use crate::datamodel::{PackageInfo, SchemaInfo};
+use crate::generator::{get_generator, Generator};
+// use crate::lua_env::{create_lua_env, GeneratorContext};
+use crate::output_files::get_output_files;
+use crate::rhai_engine::{create_rhai_env, GeneratorContext};
+
+#[derive(Parser)]
+struct Cli {
+    #[command(subcommand)]
+    command: Command,
+}
+
+#[derive(Subcommand)]
+enum Command {
+    /// Run code generation
+    Generate {
+        /// Output directory
+        #[arg(short, long, default_value = "./output")]
+        output: Arc<str>,
+
+        /// Schema project directory to process
+        #[arg(default_value = ".")]
+        project_dir: Arc<str>,
+    },
+
+    /// Display information about a code generator
+    Show {
+        /// Generator name or directory
+        #[arg()]
+        generator: Arc<str>,
+    },
+
+    /// Export a generator configuration (built-in or external)
+    Export {
+        /// Output directory
+        #[arg(short, long)]
+        output: Arc<str>,
+
+        /// Generator name or directory to export
+        #[arg()]
+        generator: Arc<str>,
+    },
+}
+
+fn main() {
+    println!("Hello, world!");
+    let args = Cli::parse();
+
+    match args.command {
+        Command::Generate {
+            output,
+            project_dir,
+        } => {
+            let canonical_project_dir = Path::new(project_dir.as_ref()).canonicalize().unwrap();
+            set_current_dir(&canonical_project_dir).unwrap();
+            let cfg = config::read_from_toml(&Path::new(".")).unwrap();
+            let mut schema_paths: Vec<PathBuf> = Vec::new();
+            let mut schema_strings: Vec<String> = Vec::new();
+            for include_path in cfg.include.iter() {
+                let files = glob::glob(include_path.as_ref()).unwrap();
+                for f_path_res in files {
+                    let f_path = f_path_res.unwrap();
+                    let canonical_f_path = f_path.canonicalize().unwrap();
+                    let relative_f_path = canonical_f_path
+                        .strip_prefix(&canonical_project_dir)
+                        .unwrap()
+                        .to_owned();
+                    let mut f = File::open(&f_path).unwrap();
+                    let file_size = f.metadata().unwrap().len();
+
+                    let mut schema = String::with_capacity(file_size as usize);
+                    f.read_to_string(&mut schema).unwrap();
+
+                    schema_paths.push(relative_f_path);
+                    schema_strings.push(schema);
+                }
+            }
+
+            let schema_strs: Vec<&str> = schema_strings.iter().map(|s| s.as_str()).collect();
+            let schemas = Schema::parse_list(&schema_strs[..]).unwrap();
+            let mut schema_infos: Vec<SchemaInfo> = Vec::new();
+            for (path, schema) in schema_paths.iter().zip(schemas.iter()) {
+                let name = schema.name().map(|n| n.name.clone());
+                let namespace = schema.namespace();
+                let full_name = match &name {
+                    Some(nm) => match &namespace {
+                        Some(ns) => {
+                            let mut name_accum = String::with_capacity(ns.len() + 1 + nm.len());
+                            name_accum.push_str(ns);
+                            name_accum.push('.');
+                            name_accum.push_str(nm);
+                            Some(name_accum)
+                        }
+                        None => Some(nm.clone()),
+                    },
+                    None => None,
+                };
+
+                schema_infos.push(SchemaInfo {
+                    name: name.unwrap_or_else(|| String::new()),
+                    namespace: namespace.unwrap_or_else(|| String::new()),
+                    full_name: full_name.unwrap_or_else(|| String::new()),
+                    // TODO: Always provide unix-style path regardless fo platform
+                    file_path: String::from(path.as_os_str().to_str().unwrap())
+                        .replace(MAIN_SEPARATOR_STR, "/"),
+                    schema: schema.clone(),
+                });
+            }
+
+            let mut generators: Vec<(Arc<str>, Arc<Generator>)> = Vec::new();
+            for gen_name in cfg.default_generators.iter() {
+                let generator = get_generator(gen_name).unwrap();
+                generators.push((gen_name.clone(), Arc::new(generator)));
+            }
+
+            let mut files_toml_context = Context::new();
+            files_toml_context.insert("schemas", &schema_infos);
+
+            let package_info = PackageInfo {
+                name: String::from(cfg.name.as_ref()),
+                version: String::from(cfg.version.as_ref()),
+                description: String::from(cfg.description.as_ref()),
+            };
+
+            for (generator_name, generator) in generators.iter() {
+                let generator_output_dir = Path::new(output.as_ref()).join(generator_name.as_ref());
+
+                if generator_output_dir.exists() {
+                    remove_dir_all(&generator_output_dir).unwrap();
+                }
+
+                let params = cfg
+                    .generator_configs
+                    .get(generator_name.as_ref())
+                    .map(|gen_cfg| gen_cfg.params.clone())
+                    .unwrap_or(serde_json::Map::new());
+
+                let rhai_engine = create_rhai_env(GeneratorContext::new(
+                    generator_output_dir,
+                    generator.clone(),
+                    schema_infos.clone(),
+                    package_info.clone(),
+                    params
+                ));
+
+                let mut scope = rhai::Scope::new();
+
+                scope.push_constant("schemas", rhai::serde::to_dynamic(&schema_infos).unwrap());
+                scope.push_constant("package", rhai::serde::to_dynamic(&package_info).unwrap());
+
+                rhai_engine.run_with_scope(&mut scope, generator.generate_script.as_ref()).unwrap();
+            }
+        }
+        Command::Show { generator } => {}
+        Command::Export { output, generator } => {}
+    };
+}

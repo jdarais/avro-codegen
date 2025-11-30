@@ -1,0 +1,9 @@
+name = "rust_and_ts"
+version = "0.1.0"
+description = "An exmaple project that generates some basic types for rust and typescript"
+include = ["**/*.avsc"]
+default_generators = ["rust"]
+
+[generators.rust.params]
+serde = false
+
