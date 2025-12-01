@@ -73,6 +73,8 @@ for schema in schemas.values() {
     // }
 }
 
+render("Cargo.toml.tera", "Cargo.toml", #{});
+
 let lib_mod = modules.remove("");
 let lib_submodules = lib_mod.submodules.keys();
 lib_submodules.sort();
