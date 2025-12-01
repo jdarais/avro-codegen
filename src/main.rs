@@ -6,6 +6,7 @@ mod output_files;
 mod rhai_engine;
 mod tera_env;
 
+use std::collections::HashMap;
 use std::env::set_current_dir;
 use std::fs::{create_dir_all, remove_dir_all, File};
 use std::io::Read;
@@ -58,6 +59,50 @@ enum Command {
         #[arg()]
         generator: Arc<str>,
     },
+}
+
+fn collect_schemas(schema_collection: &mut HashMap<String, SchemaInfo>, schema: &Schema, schema_info: &SchemaInfo) {
+    match schema {
+        Schema::Enum(sch) => {
+            let fullname = sch.name.fullname(None);
+            schema_collection.insert(fullname.clone(), SchemaInfo {
+                name: sch.name.name.clone(),
+                namespace: sch.name.namespace.as_ref().map(String::clone).unwrap_or_else(String::new),
+                full_name: fullname,
+                file_path: schema_info.file_path.clone(),
+                schema: schema.clone()
+            });
+        }
+        Schema::Fixed(sch) => {
+            let fullname = sch.name.fullname(None);
+            schema_collection.insert(fullname.clone(), SchemaInfo {
+                name: sch.name.name.clone(),
+                namespace: sch.name.namespace.as_ref().map(String::clone).unwrap_or_else(String::new),
+                full_name: fullname,
+                file_path: schema_info.file_path.clone(),
+                schema: schema.clone()
+            });
+        }
+        Schema::Union(sch) => {
+            for variant in sch.variants() {
+                collect_schemas(&mut *schema_collection, variant, schema_info);
+            }
+        }
+        Schema::Record(sch) => {
+            let fullname = sch.name.fullname(None);
+            schema_collection.insert(fullname.clone(), SchemaInfo {
+                name: sch.name.name.clone(),
+                namespace: sch.name.namespace.as_ref().map(String::clone).unwrap_or_else(String::new),
+                full_name: fullname,
+                file_path: schema_info.file_path.clone(),
+                schema: schema.clone()
+            });
+            for field in sch.fields.iter() {
+                collect_schemas(&mut *schema_collection, &field.schema, schema_info);
+            }
+        }
+        _ => { /* Nothing to do */}
+    }
 }
 
 fn main() {
@@ -125,6 +170,11 @@ fn main() {
                 });
             }
 
+            let mut all_schemas: HashMap<String, SchemaInfo> = HashMap::with_capacity(schemas.len());
+            for schema_info in schema_infos.iter() {
+                collect_schemas(&mut all_schemas, &schema_info.schema, &schema_info);
+            }
+
             let mut generators: Vec<(Arc<str>, Arc<Generator>)> = Vec::new();
             for gen_name in cfg.default_generators.iter() {
                 let generator = get_generator(gen_name).unwrap();
@@ -163,7 +213,7 @@ fn main() {
 
                 let mut scope = rhai::Scope::new();
 
-                scope.push_constant("schemas", rhai::serde::to_dynamic(&schema_infos).unwrap());
+                scope.push_constant("schemas", rhai::serde::to_dynamic(&all_schemas).unwrap());
                 scope.push_constant("package", rhai::serde::to_dynamic(&package_info).unwrap());
 
                 rhai_engine.run_with_scope(&mut scope, generator.generate_script.as_ref()).unwrap();

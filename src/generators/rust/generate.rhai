@@ -5,7 +5,7 @@ fn join(arr, sep) {
 
 let modules = #{ "": #{ schemas: [], submodules: #{}}};
 
-for schema in schemas {
+for schema in schemas.values() {
     let module_path = [];
     for mod in schema.namespace.split(".") {
         let parent_module_path_str = join(module_path, ".");
