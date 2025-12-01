@@ -3,6 +3,6 @@
     "name": "RecordWithRef",
     "fields": [
         { "name": "some_int", "type": "int" },
-        { "name": "test", "type": "org.testorg.test.TestRecord" }
+        { "name": "test", "type": ["null", "org.testorg.test.TestRecord"] }
     ]
 }

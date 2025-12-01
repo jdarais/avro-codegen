@@ -2,39 +2,61 @@
 pub mod {{ mod }};
 {% endfor -%}
 
+
+{% macro render_union_variant(schema) -%}
+{% if schema.type == "null" -%}
+    {# #}   Null,
+{% elif schema.type == "boolean" -%}
+    {# #}   Boolean(bool),
+{% elif schema.type == "int" -%}
+    {# #}   Int(i32),
+{% elif schema.type == "long" -%}
+    {# #}   Long(i64),
+{% elif schema.type == "float" -%}
+    {# #}   Float(f32),
+{% elif schema.type == "double" -%}
+    {# #}   Double(f64),
+{% elif schema.type == "ref" -%}
+    {# #}   // {{ schema.fullname | replace(from=".", to=" ") | title | replace(from=" ", to="") }}()
+{% endif -%}
+{% endmacro render_union_variant -%}
+
+{% for name, union in params.unions -%}
+pub enum {{ name }} {
+{% for variant in union.variants -%}
+{{ self::render_union_variant(schema=variant) -}}
+{% endfor -%}
+}
+{% endfor -%}
+
 {% macro render_record_field(name, schema) -%}
-{% set type = schema_type(schema=schema) -%}
-{% if type == "null" -%}
+{% if schema.type == "null" -%}
     {# #}   pub {{ name }}: (),
-{% elif type == "boolean" -%}
+{% elif schema.type == "boolean" -%}
     {# #}   pub {{ name }}: bool,
-{% elif type == "int" -%}
+{% elif schema.type == "int" -%}
     {# #}    pub {{ name }}: i32,
-{% elif type == "long" -%}
+{% elif schema.type == "long" -%}
     {# #}    pub {{ name }}: i64,
-{% elif type == "float" -%}
+{% elif schema.type == "float" -%}
     {# #}    pub {{ name }}: f32,
-{% elif type == "double" -%}
+{% elif schema.type == "double" -%}
     {# #}    pub {{ name }}: f64,
+{% elif schema.type == "ref" %}
+    {# #}    // pub {{ name }}: {{ schema.fullname }}
 {% else -%}
-    {# #}    // {{ name }} is a {{ type }}
+    {# #}    // {{ name }} is a {{ schema.type }}
 {% endif -%}
 {% endmacro render_record_field -%}
 
 
-{% macro render_field(field) -%}
-
-{% endmacro render_field -%}
-
-
-
 
 {% for schema in params.schemas -%}
-{% if schema.schema.type == "record" -%}
-pub struct {{ schema.schema.name }} {
-{% for field in schema.schema.fields -%}
-{{ self::render_record_field(name=field.name, schema=field.type) }}
-{%- endfor -%}
+{% if schema.type == "record" -%}
+pub struct {{ schema.name }} {
+{% for field in schema.fields -%}
+{{ self::render_record_field(name=field.name, schema=field.type) -}}
+{% endfor -%}
 }
 {% endif -%}
 {% endfor -%}

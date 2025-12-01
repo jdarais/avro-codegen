@@ -17,7 +17,7 @@ use apache_avro::schema::Schema;
 use clap::{Parser, Subcommand};
 use tera::Context;
 
-use crate::datamodel::{PackageInfo, SchemaInfo};
+use crate::datamodel::{schema_to_json, PackageInfo, SchemaInfo};
 use crate::generator::{get_generator, Generator};
 // use crate::lua_env::{create_lua_env, GeneratorContext};
 use crate::output_files::get_output_files;
@@ -61,27 +61,47 @@ enum Command {
     },
 }
 
-fn collect_schemas(schema_collection: &mut HashMap<String, SchemaInfo>, schema: &Schema, schema_info: &SchemaInfo) {
+fn collect_schemas(
+    schema_collection: &mut HashMap<String, SchemaInfo>,
+    schema: &Schema,
+    schema_info: &SchemaInfo,
+) {
     match schema {
         Schema::Enum(sch) => {
             let fullname = sch.name.fullname(None);
-            schema_collection.insert(fullname.clone(), SchemaInfo {
-                name: sch.name.name.clone(),
-                namespace: sch.name.namespace.as_ref().map(String::clone).unwrap_or_else(String::new),
-                full_name: fullname,
-                file_path: schema_info.file_path.clone(),
-                schema: schema.clone()
-            });
+            schema_collection.insert(
+                fullname.clone(),
+                SchemaInfo {
+                    name: sch.name.name.clone(),
+                    namespace: sch
+                        .name
+                        .namespace
+                        .as_ref()
+                        .map(String::clone)
+                        .unwrap_or_else(String::new),
+                    full_name: fullname,
+                    file_path: schema_info.file_path.clone(),
+                    schema: schema.clone(),
+                },
+            );
         }
         Schema::Fixed(sch) => {
             let fullname = sch.name.fullname(None);
-            schema_collection.insert(fullname.clone(), SchemaInfo {
-                name: sch.name.name.clone(),
-                namespace: sch.name.namespace.as_ref().map(String::clone).unwrap_or_else(String::new),
-                full_name: fullname,
-                file_path: schema_info.file_path.clone(),
-                schema: schema.clone()
-            });
+            schema_collection.insert(
+                fullname.clone(),
+                SchemaInfo {
+                    name: sch.name.name.clone(),
+                    namespace: sch
+                        .name
+                        .namespace
+                        .as_ref()
+                        .map(String::clone)
+                        .unwrap_or_else(String::new),
+                    full_name: fullname,
+                    file_path: schema_info.file_path.clone(),
+                    schema: schema.clone(),
+                },
+            );
         }
         Schema::Union(sch) => {
             for variant in sch.variants() {
@@ -90,18 +110,26 @@ fn collect_schemas(schema_collection: &mut HashMap<String, SchemaInfo>, schema: 
         }
         Schema::Record(sch) => {
             let fullname = sch.name.fullname(None);
-            schema_collection.insert(fullname.clone(), SchemaInfo {
-                name: sch.name.name.clone(),
-                namespace: sch.name.namespace.as_ref().map(String::clone).unwrap_or_else(String::new),
-                full_name: fullname,
-                file_path: schema_info.file_path.clone(),
-                schema: schema.clone()
-            });
+            schema_collection.insert(
+                fullname.clone(),
+                SchemaInfo {
+                    name: sch.name.name.clone(),
+                    namespace: sch
+                        .name
+                        .namespace
+                        .as_ref()
+                        .map(String::clone)
+                        .unwrap_or_else(String::new),
+                    full_name: fullname,
+                    file_path: schema_info.file_path.clone(),
+                    schema: schema.clone(),
+                },
+            );
             for field in sch.fields.iter() {
                 collect_schemas(&mut *schema_collection, &field.schema, schema_info);
             }
         }
-        _ => { /* Nothing to do */}
+        _ => { /* Nothing to do */ }
     }
 }
 
@@ -170,10 +198,16 @@ fn main() {
                 });
             }
 
-            let mut all_schemas: HashMap<String, SchemaInfo> = HashMap::with_capacity(schemas.len());
+            let mut all_schemas: HashMap<String, SchemaInfo> =
+                HashMap::with_capacity(schemas.len());
             for schema_info in schema_infos.iter() {
                 collect_schemas(&mut all_schemas, &schema_info.schema, &schema_info);
             }
+
+            let all_schemas_json: HashMap<String, serde_json::Value> = all_schemas
+                .iter()
+                .map(|(k, v)| (k.clone(), schema_to_json(&v.schema, v)))
+                .collect();
 
             let mut generators: Vec<(Arc<str>, Arc<Generator>)> = Vec::new();
             for gen_name in cfg.default_generators.iter() {
@@ -208,15 +242,17 @@ fn main() {
                     generator.clone(),
                     schema_infos.clone(),
                     package_info.clone(),
-                    params
+                    params,
                 ));
 
                 let mut scope = rhai::Scope::new();
 
-                scope.push_constant("schemas", rhai::serde::to_dynamic(&all_schemas).unwrap());
+                scope.push_constant("schemas", rhai::serde::to_dynamic(&all_schemas_json).unwrap());
                 scope.push_constant("package", rhai::serde::to_dynamic(&package_info).unwrap());
 
-                rhai_engine.run_with_scope(&mut scope, generator.generate_script.as_ref()).unwrap();
+                rhai_engine
+                    .run_with_scope(&mut scope, generator.generate_script.as_ref())
+                    .unwrap();
             }
         }
         Command::Show { generator } => {}
