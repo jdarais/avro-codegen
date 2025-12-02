@@ -18,6 +18,7 @@ pub struct PackageInfo {
     pub description: String,
 }
 
+
 pub fn schema_to_json(schema: &Schema, schema_info: &SchemaInfo) -> serde_json::Value {
     match schema {
         Schema::Null => json!({"type": "null"}),

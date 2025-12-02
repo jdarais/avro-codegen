@@ -1,4 +1,14 @@
 
+function to_snake_case(name)
+    local words = array {}
+    local name_deconst_cased = name:gsub("([A-Z]*)_([A-Z]*)", function(l, r) return l:lower().."_"..r:lower() end)
+    for word in name_deconst_cased:reverse():gmatch("[a-z0-9]*[A-Z]?") do
+        words:push(word)
+    end
+    return table.concat(words, "_"):reverse():lower()
+end
+
+
 local union_variant_names = (function()
     local x = {}
     x["null"] =     function () return "Null" end
@@ -26,22 +36,25 @@ function union_to_name(schema)
     )
 end
 
-function find_unions(schema)
+function find_unions(schema, path)
     local result = array{}
 
-    if schema.type == "record" then
-        local field_unions = schema.fields:map(function (f) return find_unions(f.type) end)
+    if schema.type == "record" and #path == 1 then
+        local field_unions = schema.fields:map(function (f)
+            return find_unions(f.type, path + {f.name})
+        end)
+
         for i, unions in ipairs(field_unions) do
             result:append(unions)
         end
     elseif schema.type == "array" then
-        result:append(find_unions(schema.items))
+        result:append(find_unions(schema.items, path + {"arritem"}))
     elseif schema.type == "map" then
-        result:append(find_unions(schema.values))
+        result:append(find_unions(schema.values, path + {"mapval"}))
     elseif schema.type == "union" then
-        result:push(schema)
+        result:push(map{schema=schema, path=path})
         for i, variant in ipairs(schema.variants) do
-            result:append(find_unions(variant))
+            result:append(find_unions(variant, path + {"variant"..tostring(i)}))
         end
     end
 
@@ -67,7 +80,7 @@ for name, schema in pairs(schemas) do
     local module = modules[schema.namespace]
     module.schemas:push(schema)
 
-    for i, union in ipairs(find_unions(schema)) do
+    for i, union in ipairs(find_unions(schema, schema)) do
         local union_name = union_to_name(union)
         module.unions[union_name] = union
     end

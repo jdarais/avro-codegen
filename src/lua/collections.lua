@@ -32,6 +32,12 @@ local array_metatable = {
 
         rawset(self, key, value)
     end,
+    __add = function(self, other)
+        local result = setmetatable({}, getmetatable(self))
+        result:append(self)
+        result:append(other)
+        return result
+    end
 }
 
 local function array(init)
