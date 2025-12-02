@@ -1,12 +1,26 @@
 
 function to_snake_case(name)
     local words = array {}
-    local name_deconst_cased = name:gsub("([A-Z]*)_([A-Z]*)", function(l, r) return l:lower().."_"..r:lower() end)
+    local name_deconst_cased = name
+        :gsub("_([A-Z0-9]*)%f[_]", function(s) return "_"..s:lower() end)
+        :gsub("^([A-Z0-9]*)_", function(s) return s:lower().."_" end)
+        :gsub("_([A-Z0-9]*)$", function(s) return "_"..s:lower() end)
+
     for word in name_deconst_cased:reverse():gmatch("[a-z0-9]*[A-Z]?") do
         words:push(word)
     end
     return table.concat(words, "_"):reverse():lower()
 end
+
+-- print(to_snake_case("ThisIsATitle"))
+-- print(to_snake_case("thisIsACamel"))
+-- print(to_snake_case("This_Is_a_wierd_Old_Snake_title"))
+-- print(to_snake_case("ThisIsATitleWith3Numbers"))
+-- print(to_snake_case("THIS_IS_A_CAPITALIZED_SNAKE_CASE"))
+-- print(to_snake_case("THIS_IS_A_CAPITALIZED_SnakeCase"))
+-- print(to_snake_case("THIS_IS_A_CAPITALIZED_LetterA_SnakeCase"))
+-- print(to_snake_case("THIS_IS_A_CAPITALIZED_LetterA_NUMBER3_SnakeCase"))
+
 
 
 local union_variant_names = (function()
