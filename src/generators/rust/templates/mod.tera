@@ -17,7 +17,7 @@ pub mod {{ mod }};
 {% elif schema.type == "double" -%}
     {# #}   Double(f64),
 {% elif schema.type == "ref" -%}
-    {# #}   // {{ schema.fullname | replace(from=".", to=" ") | title | replace(from=" ", to="") }}()
+    {# #}   // {{ schema.name }}()
 {% endif -%}
 {% endmacro render_union_variant -%}
 
@@ -42,7 +42,7 @@ pub enum {{ name }} {
     {# #}    pub {{ name }}: f32,
 {% elif schema.type == "double" -%}
     {# #}    pub {{ name }}: f64,
-{% elif schema.type == "ref" %}
+{% elif schema.type == "ref" -%}
     {# #}    // pub {{ name }}: {{ schema.fullname }}
 {% else -%}
     {# #}    // {{ name }} is a {{ schema.type }}

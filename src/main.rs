@@ -1,7 +1,7 @@
 mod config;
 mod datamodel;
 mod generator;
-// mod lua_env;
+mod lua_env;
 mod output_files;
 mod rhai_engine;
 mod tera_env;
@@ -19,9 +19,9 @@ use tera::Context;
 
 use crate::datamodel::{schema_to_json, PackageInfo, SchemaInfo};
 use crate::generator::{get_generator, Generator};
-// use crate::lua_env::{create_lua_env, GeneratorContext};
+use crate::lua_env::{create_lua_env, json_to_lua, GeneratorContext};
 use crate::output_files::get_output_files;
-use crate::rhai_engine::{create_rhai_env, GeneratorContext};
+// use crate::rhai_engine::{create_rhai_env, GeneratorContext};
 
 #[derive(Parser)]
 struct Cli {
@@ -204,7 +204,7 @@ fn main() {
                 collect_schemas(&mut all_schemas, &schema_info.schema, &schema_info);
             }
 
-            let all_schemas_json: HashMap<String, serde_json::Value> = all_schemas
+            let all_schemas_json: serde_json::Map<String, serde_json::Value> = all_schemas
                 .iter()
                 .map(|(k, v)| (k.clone(), schema_to_json(&v.schema, v)))
                 .collect();
@@ -237,22 +237,25 @@ fn main() {
                     .map(|gen_cfg| gen_cfg.params.clone())
                     .unwrap_or(serde_json::Map::new());
 
-                let rhai_engine = create_rhai_env(GeneratorContext::new(
+                let lua = create_lua_env(GeneratorContext::new(
                     generator_output_dir,
                     generator.clone(),
                     schema_infos.clone(),
                     package_info.clone(),
                     params,
-                ));
+                ))
+                .unwrap();
 
-                let mut scope = rhai::Scope::new();
+                lua.globals().set(
+                    "schemas",
+                    json_to_lua(&lua, &serde_json::to_value(&all_schemas_json).unwrap()).unwrap(),
+                ).unwrap();
+                lua.globals().set(
+                    "package",
+                    json_to_lua(&lua, &serde_json::to_value(&package_info).unwrap()).unwrap(),
+                ).unwrap();
 
-                scope.push_constant("schemas", rhai::serde::to_dynamic(&all_schemas_json).unwrap());
-                scope.push_constant("package", rhai::serde::to_dynamic(&package_info).unwrap());
-
-                rhai_engine
-                    .run_with_scope(&mut scope, generator.generate_script.as_ref())
-                    .unwrap();
+                lua.load(generator.generate_script.as_ref()).set_name("@generate.rs").exec().unwrap();
             }
         }
         Command::Show { generator } => {}

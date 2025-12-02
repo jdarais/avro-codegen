@@ -106,7 +106,7 @@ fn read_builtin_generator_archive(archive_data: &[u8]) -> Result<Generator, anyh
             buf.clear();
             entry.read_to_string(&mut buf)?;
             params = read_params_from_toml(&buf)?;
-        } else if path.as_ref() == "generate.rhai" {
+        } else if path.as_ref() == "generate.lua" {
             buf.clear();
             entry.read_to_string(&mut buf)?;
             generate_script = Some(Arc::from(buf.as_str()));
@@ -116,7 +116,7 @@ fn read_builtin_generator_archive(archive_data: &[u8]) -> Result<Generator, anyh
     println!("Adding generator with templates {:?}", templates);
 
     match generate_script {
-        None => Err(anyhow!("No generate.rhai file found")),
+        None => Err(anyhow!("No generate.lua file found")),
         Some(s) => {
             let mut tera = create_tera();
             tera.add_raw_templates(templates)?;
@@ -135,11 +135,11 @@ fn create_generator_from_path(generator_dir_str: &str) -> Result<Generator, anyh
     let params_toml_path = generator_dir.join("params.toml");
 
     // One of these paths must exist
-    let generate_script_path = generator_dir.join("generate.rhai");
+    let generate_script_path = generator_dir.join("generate.lua");
 
     if !generator_dir.is_dir() { return Err(anyhow!("Given generator directory path is not a directory: {}", generator_dir.display())); }
     if !generate_script_path.is_file() {
-        return Err(anyhow!("Generator directory must contain a generate.rhai file"));
+        return Err(anyhow!("Generator directory must contain a generate.lua file"));
     }
 
     let mut tera = create_tera();
