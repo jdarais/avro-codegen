@@ -3,12 +3,11 @@ use std::fs::File;
 use std::path::Path;
 use std::sync::Arc;
 use std::{
-    borrow::Cow,
-    io::{Read, Seek, SeekFrom},
+    io::Read,
 };
 
 use anyhow::anyhow;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
 #[derive(Deserialize, Debug)]
 pub struct GeneratorConfig {

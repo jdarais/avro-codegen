@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 use std::collections::HashMap;
 use std::fs::File;
-use std::io::{BufReader, Read, Seek, SeekFrom};
+use std::io::Read;
 use std::include_bytes;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};

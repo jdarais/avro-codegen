@@ -2,13 +2,11 @@ mod config;
 mod datamodel;
 mod generator;
 mod lua_env;
-mod output_files;
-mod rhai_engine;
 mod tera_env;
 
 use std::collections::HashMap;
 use std::env::set_current_dir;
-use std::fs::{create_dir_all, remove_dir_all, File};
+use std::fs::{remove_dir_all, File};
 use std::io::Read;
 use std::path::{Path, PathBuf, MAIN_SEPARATOR_STR};
 use std::sync::Arc;
@@ -20,8 +18,6 @@ use tera::Context;
 use crate::datamodel::{schema_to_json, PackageInfo, SchemaInfo};
 use crate::generator::{get_generator, Generator};
 use crate::lua_env::{create_lua_env, json_to_lua, GeneratorContext};
-use crate::output_files::get_output_files;
-// use crate::rhai_engine::{create_rhai_env, GeneratorContext};
 
 #[derive(Parser)]
 struct Cli {
@@ -258,7 +254,7 @@ fn main() {
                 lua.load(generator.generate_script.as_ref()).set_name("@generate.rs").exec().unwrap();
             }
         }
-        Command::Show { generator } => {}
-        Command::Export { output, generator } => {}
+        Command::Show { generator: _ } => {}
+        Command::Export { output: _, generator: _ } => {}
     };
 }

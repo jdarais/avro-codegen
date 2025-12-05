@@ -184,6 +184,7 @@ fn render(
         serde_json::to_value(&generator_context.package)
             .map_err(|e| mlua::Error::runtime(format!("{e}")))?,
     );
+    context_map.append(&mut generator_context.params.clone());
     context_map.insert(String::from("params"), serde_json::Value::Object(params));
 
     let tera = generator_context.generator.tera.lock().unwrap();
