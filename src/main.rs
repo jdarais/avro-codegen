@@ -13,11 +13,12 @@ use std::sync::Arc;
 
 use apache_avro::schema::Schema;
 use clap::{Parser, Subcommand};
+use mlua::LuaSerdeExt;
 use tera::Context;
 
 use crate::datamodel::{schema_to_json, PackageInfo, SchemaInfo};
 use crate::generator::{get_generator, Generator};
-use crate::lua_env::{create_lua_env, json_to_lua, GeneratorContext};
+use crate::lua_env::{create_lua_env, GeneratorContext};
 
 #[derive(Parser)]
 struct Cli {
@@ -244,11 +245,11 @@ fn main() {
 
                 lua.globals().set(
                     "schemas",
-                    json_to_lua(&lua, &serde_json::to_value(&all_schemas_json).unwrap()).unwrap(),
+                    lua.to_value(&serde_json::to_value(&all_schemas_json).unwrap()).unwrap(),
                 ).unwrap();
                 lua.globals().set(
                     "package",
-                    json_to_lua(&lua, &serde_json::to_value(&package_info).unwrap()).unwrap(),
+                    lua.to_value(&serde_json::to_value(&package_info).unwrap()).unwrap(),
                 ).unwrap();
 
                 lua.load(generator.generate_script.as_ref()).set_name("@generate.rs").exec().unwrap();

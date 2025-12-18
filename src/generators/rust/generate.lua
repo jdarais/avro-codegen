@@ -71,8 +71,8 @@ for name, schema in pairs(schemas) do
     local module = modules[schema.namespace]
     module.schemas:push(schema)
 
-    for i, union in ipairs(find_unions(schema, schema)) do
-        local union_name = union_to_name(union)
+    for i, union in ipairs(find_unions(schema, array {schema.name})) do
+        local union_name = union_to_name(union.schema)
         module.unions[union_name] = union
     end
 end

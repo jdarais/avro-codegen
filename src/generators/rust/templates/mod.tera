@@ -17,13 +17,13 @@ pub mod {{ mod }};
 {% elif schema.type == "double" -%}
     {# #}   Double(f64),
 {% elif schema.type == "ref" -%}
-    {# #}   // {{ schema.name }}()
+    {# #}   {{ schema.namespace | title_case }}{{ schema.name }}()
 {% endif -%}
 {% endmacro render_union_variant -%}
 
 {% for name, union in params.unions -%}
 pub enum {{ name }} {
-{% for variant in union.variants -%}
+{% for variant in union.schema.variants -%}
 {{ self::render_union_variant(schema=variant) -}}
 {% endfor -%}
 }

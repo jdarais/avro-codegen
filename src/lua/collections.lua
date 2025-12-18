@@ -1,3 +1,5 @@
+local array_metatable = ...
+
 local array_methods = {
     push = function(self, value)
         table.insert(self, value)
@@ -10,7 +12,7 @@ local array_methods = {
     end,
 
     map = function(self, map_fn)
-        result = setmetatable({}, getmetatable(self))
+        result = setmetatable({}, array_metatable)
         for i, v in ipairs(self) do
             result:push(map_fn(v, i))
         end
@@ -18,27 +20,26 @@ local array_methods = {
     end
 }
 
-local array_metatable = {
-    is_array = true,
-    __index = array_methods,
-    __newindex = function(self, key, value)
-        if type(key) ~= "number" then
-            error("Only number keys are allowed in arrays")
-        end
-
-        if key < 1 or key > #self+1 then
-            error("Array index out of bounds: "..key)
-        end
-
-        rawset(self, key, value)
-    end,
-    __add = function(self, other)
-        local result = setmetatable({}, getmetatable(self))
-        result:append(self)
-        result:append(other)
-        return result
+array_metatable.__index = array_methods
+function array_metatable.__newindex(self, key, value)
+    if type(key) ~= "number" then
+        error("Only number keys are allowed in arrays")
     end
-}
+
+    if key < 1 or key > #self+1 then
+        error("Array index out of bounds: "..key)
+    end
+
+    rawset(self, key, value)
+end
+
+function array_metatable.__add(self, other)
+    local result = setmetatable({}, array_metatable)
+    result:append(self)
+    result:append(other)
+    return result
+end
+
 
 local function array(init)
     local result = setmetatable({}, array_metatable)
@@ -79,7 +80,6 @@ local map_methods = {
 }
 
 local map_metatable = {
-    is_map = true,
     __index = map_methods,
     __newindex = function(self, key, value)
         if type(key) ~= "string" then

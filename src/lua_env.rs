@@ -2,7 +2,7 @@ use std::fs::create_dir_all;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use mlua::{Lua, LuaOptions, StdLib};
+use mlua::{Lua, LuaOptions, LuaSerdeExt, StdLib};
 
 use crate::datamodel::{PackageInfo, SchemaInfo};
 use crate::generator::Generator;
@@ -33,132 +33,9 @@ impl GeneratorContext {
     }
 }
 
-pub fn json_to_lua(lua: &Lua, value: &serde_json::Value) -> mlua::Result<mlua::Value> {
-    match value {
-        serde_json::Value::Null => Ok(mlua::Value::Nil),
-        serde_json::Value::Bool(b) => Ok(mlua::Value::Boolean(*b)),
-        serde_json::Value::Number(n) => {
-            Ok(mlua::Value::Number(n.as_f64().ok_or_else(|| {
-                mlua::Error::runtime("Unable to convert json number to lua number")
-            })?))
-        }
-        serde_json::Value::String(s) => Ok(mlua::Value::String(lua.create_string(s)?)),
-        serde_json::Value::Array(arr) => {
-            let items = lua.create_table()?;
-            for val in arr {
-                items.push(json_to_lua(lua, val)?)?;
-            }
-
-            Ok(mlua::Value::Table(create_array(lua, Some(items))?))
-        }
-        serde_json::Value::Object(obj) => {
-            let items = lua.create_table()?;
-            for (k, v) in obj {
-                items.set(k.clone(), json_to_lua(lua, v)?)?;
-            }
-
-            Ok(mlua::Value::Table(create_map(lua, Some(items))?))
-        }
-    }
-}
-
 fn create_array(lua: &Lua, init: Option<mlua::Table>) -> mlua::Result<mlua::Table> {
     let array_ctor: mlua::Function = lua.globals().get("array")?;
     array_ctor.call(init)
-}
-
-fn lua_table_looks_like_array(value: &mlua::Table) -> mlua::Result<bool> {
-    for pair in value.pairs() {
-        let (k, _v): (mlua::Value, mlua::Value) = pair?;
-        if !k.is_number() {
-            return Ok(false);
-        }
-    }
-
-    return Ok(true);
-}
-
-fn lua_table_to_json_array(lua: &Lua, value: &mlua::Table) -> mlua::Result<Vec<serde_json::Value>> {
-    let array_len = value.len()?;
-    let mut result: Vec<serde_json::Value> = vec![serde_json::Value::Null; array_len as usize];
-    for pair in value.pairs() {
-        let (k, v): (i64, mlua::Value) = pair?;
-        if k < 1 || k > array_len {
-            return Err(mlua::Error::runtime(format!(
-                "Found non-contiguous index while converting lua table to array: {k}"
-            )));
-        }
-
-        result[(k as usize) - 1] = lua_to_json(lua, &v)?;
-    }
-
-    Ok(result)
-}
-
-fn create_map(lua: &Lua, init: Option<mlua::Table>) -> mlua::Result<mlua::Table> {
-    let map_ctor: mlua::Function = lua.globals().get("map")?;
-    map_ctor.call(init)
-}
-
-fn lua_table_looks_like_object(value: &mlua::Table) -> mlua::Result<bool> {
-    for pair in value.pairs() {
-        let (k, _v): (mlua::Value, mlua::Value) = pair?;
-        if !k.is_string() {
-            return Ok(false);
-        }
-    }
-
-    return Ok(true);
-}
-
-fn lua_table_to_json_object(
-    lua: &Lua,
-    value: &mlua::Table,
-) -> mlua::Result<serde_json::Map<String, serde_json::Value>> {
-    let mut result: serde_json::Map<String, serde_json::Value> = serde_json::Map::new();
-    for pair in value.pairs() {
-        let (k, v): (String, mlua::Value) = pair?;
-        result.insert(k, lua_to_json(lua, &v)?);
-    }
-
-    Ok(result)
-}
-
-pub fn lua_to_json(lua: &Lua, value: &mlua::Value) -> mlua::Result<serde_json::Value> {
-    match value {
-        mlua::Value::Nil => Ok(serde_json::Value::Null),
-        mlua::Value::Boolean(b) => Ok(serde_json::Value::Bool(*b)),
-        mlua::Value::Number(n) => Ok(serde_json::Value::Number(
-            serde_json::Number::from_f64(*n).ok_or_else(|| {
-                mlua::Error::runtime("Unable to convert lua number to json number")
-            })?,
-        )),
-        mlua::Value::String(s) => Ok(serde_json::Value::String(s.to_str()?.to_owned())),
-        mlua::Value::Table(t) => {
-            let metatable = match t.metatable() {
-                Some(mt) => mt,
-                None => lua.create_table()?,
-            };
-
-            if let Ok(mlua::Value::Boolean(true)) = metatable.get("is_array") {
-                Ok(serde_json::Value::Array(lua_table_to_json_array(lua, t)?))
-            } else if let Ok(mlua::Value::Boolean(true)) = metatable.get("is_map") {
-                Ok(serde_json::Value::Object(lua_table_to_json_object(lua, t)?))
-            } else if lua_table_looks_like_object(t)? {
-                Ok(serde_json::Value::Object(lua_table_to_json_object(lua, t)?))
-            } else if lua_table_looks_like_array(t)? {
-                Ok(serde_json::Value::Array(lua_table_to_json_array(lua, t)?))
-            } else {
-                Err(mlua::Error::runtime(
-                    "Lua table does not look like an array or object",
-                ))
-            }
-        }
-        _ => Err(mlua::Error::runtime(format!(
-            "Type cannot be converted to json: {}",
-            value.type_name()
-        ))),
-    }
 }
 
 fn render(
@@ -168,8 +45,8 @@ fn render(
     output: &str,
     params_opt: &Option<mlua::Table>,
 ) -> mlua::Result<()> {
-    let params = match params_opt {
-        Some(t) => lua_table_to_json_object(lua, t)?,
+    let params: serde_json::Map<String, serde_json::Value> = match params_opt {
+        Some(t) => lua.from_value(mlua::Value::Table(t.clone()))?,
         None => serde_json::Map::new(),
     };
 
@@ -214,7 +91,7 @@ pub fn create_basic_lua_env() -> mlua::Result<Lua> {
     let collections: mlua::Table = lua
         .load(&collections_bytes[..])
         .set_name("=collections")
-        .call(())?;
+        .call((lua.array_metatable(),))?;
 
     lua.globals()
         .set("map", collections.get::<mlua::Function>("map")?)?;
@@ -356,6 +233,16 @@ mod tests {
             local snake_case = "this_is_a_100_snake_case_name"
             local title_case = snake_case:to_title_case()
             assert(title_case == "ThisIsA100SnakeCaseName", title_case)
+        "#).exec()
+    }
+
+    #[test]
+    fn test_string_with_spaces_to_title_case() -> mlua::Result<()> {
+        let lua = create_basic_lua_env()?;
+        lua.load(r#"
+            local space_case = "this is a string with spaces"
+            local title_case = space_case:to_title_case()
+            assert(title_case == "ThisIsAStringWithSpaces", title_case)
         "#).exec()
     }
 
