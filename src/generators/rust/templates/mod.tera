@@ -1,61 +1,64 @@
+{% if params.is_lib -%}
+pub mod _unions;
+{% endif -%}
+
 {% for mod in params.submodules -%}
 pub mod {{ mod }};
 {% endfor -%}
 
+{% macro render_type(schema) -%}
+{%- if schema.type == "null" -%}
+    ()
+{%- elif schema.type == "boolean" -%}
+    bool
+{%- elif schema.type == "int" -%}
+    i32
+{%- elif schema.type == "long" -%}
+    i64
+{%- elif schema.type == "float" -%}
+    f32
+{%- elif schema.type == "double" -%}
+    f64
+{%- elif schema.type == "string" -%}
+    String
+{%- elif schema.type == "ref" -%}
+    crate::{{ schema.fullname | replace(from=".", to="::") }}
+{%- elif schema.type == "union" -%}
+    {{ self::render_union_type(schema=schema) }}
+{%- else -%}
+    () /* unknown type: {{ schema.type }} */
+{%- endif -%}
+{% endmacro -%}
 
-{% macro render_union_variant(schema) -%}
-{% if schema.type == "null" -%}
-    {# #}   Null,
-{% elif schema.type == "boolean" -%}
-    {# #}   Boolean(bool),
-{% elif schema.type == "int" -%}
-    {# #}   Int(i32),
-{% elif schema.type == "long" -%}
-    {# #}   Long(i64),
-{% elif schema.type == "float" -%}
-    {# #}   Float(f32),
-{% elif schema.type == "double" -%}
-    {# #}   Double(f64),
-{% elif schema.type == "ref" -%}
-    {# #}   {{ schema.namespace | title_case }}{{ schema.name }}()
-{% endif -%}
-{% endmacro render_union_variant -%}
+{% macro render_generic_union_type(schema) -%}
+crate::_unions::Union{{ schema.variants | length }}<{% for variant in schema.variants %}{{ self::render_type(schema=variant) }}{% if not loop.last %}, {% endif %}{% endfor %}>
+{%- endmacro -%}
 
-{% for name, union in params.unions -%}
-pub enum {{ name }} {
-{% for variant in union.schema.variants -%}
-{{ self::render_union_variant(schema=variant) -}}
-{% endfor -%}
-}
-{% endfor -%}
+{% macro render_union_type(schema) -%}
+{%- if schema.variants | length == 2 -%}
+    {%- if schema.variants[0].type == "null" -%}
+        Option<{{ self::render_type(schema=schema.variants[1]) }}>
+    {%- elif schema.variants[1].type == "null" -%}
+        Option<{{ self::render_type(schema=schema.variants[0]) }}>
+    {%- else -%}
+        {{ self::render_generic_union_type(schema=schema) }}
+    {%- endif -%}
+{%- else -%}
+    {{ self::render_generic_union_type(schema=schema) }}
+{%- endif -%}
+{%- endmacro -%}
+
 
 {% macro render_record_field(name, schema) -%}
-{% if schema.type == "null" -%}
-    {# #}   pub {{ name }}: (),
-{% elif schema.type == "boolean" -%}
-    {# #}   pub {{ name }}: bool,
-{% elif schema.type == "int" -%}
-    {# #}    pub {{ name }}: i32,
-{% elif schema.type == "long" -%}
-    {# #}    pub {{ name }}: i64,
-{% elif schema.type == "float" -%}
-    {# #}    pub {{ name }}: f32,
-{% elif schema.type == "double" -%}
-    {# #}    pub {{ name }}: f64,
-{% elif schema.type == "ref" -%}
-    {# #}    // pub {{ name }}: {{ schema.fullname }}
-{% else -%}
-    {# #}    // {{ name }} is a {{ schema.type }}
-{% endif -%}
+    {# #}   pub {{ name }}: {{ self::render_type(schema=schema) }},
 {% endmacro render_record_field -%}
-
 
 
 {% for schema in params.schemas -%}
 {% if schema.type == "record" -%}
 pub struct {{ schema.name }} {
 {% for field in schema.fields -%}
-{{ self::render_record_field(name=field.name, schema=field.type) -}}
+    {{ self::render_record_field(name=field.name, schema=field.type) -}}
 {% endfor -%}
 }
 {% endif -%}

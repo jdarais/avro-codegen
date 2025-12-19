@@ -1,58 +1,23 @@
 
+local union_cardinalities = {}
+local modules = map{ [""] = map{ schemas = array{}, submodules = map{}, unions = map{} } }
 
-local union_variant_names = (function()
-    local x = {}
-    x["null"] =     function () return "Null" end
-    x["boolean"] =  function () return "Boolean" end
-    x["int"] =      function () return "Int" end
-    x["long"] =     function () return "Long" end
-    x["float"] =    function () return "Float" end
-    x["double"] =   function () return "Double" end
-    x["bytes"] =    function () return "Bytes" end
-    x["string"] =   function () return "String" end
-    x["array"] = function (schema) return x[schema.items].."Array" end
-    x["map"] = function (schema) return x[schema.values].."Map" end
-    x["union"] = function (schema) return union_to_name(schema) end
-    x["record"] = function (schema) return schema.name end
-    x["enum"] = x["record"]
-    x["fixed"] = x["record"]
-    x["ref"] = x["record"]
-    return x
-end)()
-
-function union_to_name(schema)
-    return table.concat(
-        array(schema.variants):map(function (v) return union_variant_names[v.type](v) end),
-        "Or"
-    )
-end
-
-function find_unions(schema, path)
-    local result = array{}
-
-    if schema.type == "record" and #path == 1 then
-        local field_unions = schema.fields:map(function (f)
-            return find_unions(f.type, path + {f.name})
-        end)
-
-        for i, unions in ipairs(field_unions) do
-            result:append(unions)
+function find_unions(schema, out_cardinalities)
+    if schema.type == "record" then
+        for i, field in ipairs(schema.fields) do
+            find_unions(field.type, out_cardinalities)
         end
     elseif schema.type == "array" then
-        result:append(find_unions(schema.items, path + {"arritem"}))
+        find_unions(schema.items, out_cardinalities)
     elseif schema.type == "map" then
-        result:append(find_unions(schema.values, path + {"mapval"}))
+        find_unions(schema.values, out_cardinalities)
     elseif schema.type == "union" then
-        result:push(map{schema=schema, path=path})
+        out_cardinalities[#schema.variants] = true
         for i, variant in ipairs(schema.variants) do
-            result:append(find_unions(variant, path + {"variant"..tostring(i)}))
+            find_unions(variant, out_cardinalities)
         end
     end
-
-    return result
 end
-
-local modules = map{ [""] = map{ schemas = array{}, submodules = map{}, unions = map{} } }
 
 for name, schema in pairs(schemas) do
     local module_path = array{}
@@ -71,21 +36,42 @@ for name, schema in pairs(schemas) do
     local module = modules[schema.namespace]
     module.schemas:push(schema)
 
-    for i, union in ipairs(find_unions(schema, array {schema.name})) do
-        local union_name = union_to_name(union.schema)
-        module.unions[union_name] = union
-    end
+    find_unions(schema, union_cardinalities)
 end
 
 render("Cargo.toml.tera", "Cargo.toml")
 
+local union_cardinalities_list = array {}
+for k, _ in pairs(union_cardinalities) do
+    union_cardinalities_list:push(k)
+end
+render("unions.tera", "src/_unions.rs", map { union_cardinalities = union_cardinalities_list })
+
 local lib_mod = modules:remove("")
 local lib_submodules = lib_mod.submodules:keys()
 table.sort(lib_submodules)
-render("mod.tera", "src/lib.rs", map{ submodules = lib_submodules, schemas = lib_mod.schemas, unions = lib_mod.unions })
+render(
+    "mod.tera",
+    "src/lib.rs",
+    map{
+        is_lib = true,
+        submodules = lib_submodules,
+        schemas = lib_mod.schemas,
+        unions = lib_mod.unions
+    }
+)
 
 for name, module in pairs(modules) do
     local submodules = module.submodules:keys()
     table.sort(submodules)
-    render("mod.tera", "src/"..name:gsub("[.]", "/")..".rs", map{ submodules = submodules, schemas = module.schemas, unions = module.unions })
+    render(
+        "mod.tera",
+        "src/"..name:gsub("[.]", "/")..".rs",
+        map{
+            is_lib = false,
+            submodules = submodules,
+            schemas = module.schemas,
+            unions = module.unions
+        }
+    )
 end
