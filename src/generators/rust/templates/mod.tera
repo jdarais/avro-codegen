@@ -21,6 +21,10 @@ pub mod {{ mod }};
     f64
 {%- elif schema.type == "string" -%}
     String
+{%- elif schema.type == "bytes" -%}
+    Vec<u8>
+{%- elif schema.type == "fixed" -%}
+    [u8;{{ schema.size }}]
 {%- elif schema.type == "ref" -%}
     crate::{{ schema.fullname | replace(from=".", to="::") }}
 {%- elif schema.type == "union" -%}
@@ -59,6 +63,14 @@ crate::_unions::Union{{ schema.variants | length }}<{% for variant in schema.var
 pub struct {{ schema.name }} {
 {% for field in schema.fields -%}
     {{ self::render_record_field(name=field.name, schema=field.type) -}}
+{% endfor -%}
+}
+{% elif schema.type == "fixed" -%}
+pub struct {{ schema.name }}(pub [u8;{{schema.size}}]);
+{% elif schema.type == "enum" -%}
+pub enum {{ schema.name }} {
+{% for symbol in schema.symbols -%}
+{# #}   {{ symbol | title_case }},
 {% endfor -%}
 }
 {% endif -%}

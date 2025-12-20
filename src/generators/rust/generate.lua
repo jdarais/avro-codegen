@@ -19,7 +19,7 @@ function find_unions(schema, out_cardinalities)
     end
 end
 
-for name, schema in pairs(schemas) do
+for i, schema in ipairs(schemas) do
     local module_path = array{}
     for mod in schema.namespace:gmatch("[^.]+") do
         local parent_module_path_str = table.concat(module_path, ".")

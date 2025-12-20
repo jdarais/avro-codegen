@@ -4,6 +4,23 @@
     "namespace": "org.testorg.test",
     "fields": [
         { "name": "some_int", "type": "int" },
-        { "name": "test", "type": ["null", "int", "string"] }
+        {
+            "name": "test",
+            "type": [
+                "null",
+                "int",
+                "string",
+                {"type": "fixed", "name": "Word", "size": 4}
+            ]
+        },
+        {
+            "name": "enum_field",
+            "type": {
+                "type": "enum",
+                "name": "MyEnum",
+                "namespace": "org.testorg.test",
+                "symbols": ["Yabba", "Dabba", "Doo"]
+            }
+        }
     ]
 }

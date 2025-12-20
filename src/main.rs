@@ -4,7 +4,7 @@ mod generator;
 mod lua_env;
 mod tera_env;
 
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::env::set_current_dir;
 use std::fs::{remove_dir_all, File};
 use std::io::Read;
@@ -59,7 +59,7 @@ enum Command {
 }
 
 fn collect_schemas(
-    schema_collection: &mut HashMap<String, SchemaInfo>,
+    schema_collection: &mut BTreeMap<String, SchemaInfo>,
     schema: &Schema,
     schema_info: &SchemaInfo,
 ) {
@@ -195,15 +195,14 @@ fn main() {
                 });
             }
 
-            let mut all_schemas: HashMap<String, SchemaInfo> =
-                HashMap::with_capacity(schemas.len());
+            let mut all_schemas: BTreeMap<String, SchemaInfo> = BTreeMap::new();
             for schema_info in schema_infos.iter() {
                 collect_schemas(&mut all_schemas, &schema_info.schema, &schema_info);
             }
 
-            let all_schemas_json: serde_json::Map<String, serde_json::Value> = all_schemas
+            let all_schemas_json: Vec<serde_json::Value> = all_schemas
                 .iter()
-                .map(|(k, v)| (k.clone(), schema_to_json(&v.schema, v)))
+                .map(|(_, v)| schema_to_json(&v.schema, v))
                 .collect();
 
             let mut generators: Vec<(Arc<str>, Arc<Generator>)> = Vec::new();
@@ -243,19 +242,31 @@ fn main() {
                 ))
                 .unwrap();
 
-                lua.globals().set(
-                    "schemas",
-                    lua.to_value(&serde_json::to_value(&all_schemas_json).unwrap()).unwrap(),
-                ).unwrap();
-                lua.globals().set(
-                    "package",
-                    lua.to_value(&serde_json::to_value(&package_info).unwrap()).unwrap(),
-                ).unwrap();
+                lua.globals()
+                    .set(
+                        "schemas",
+                        lua.to_value(&serde_json::to_value(&all_schemas_json).unwrap())
+                            .unwrap(),
+                    )
+                    .unwrap();
+                lua.globals()
+                    .set(
+                        "package",
+                        lua.to_value(&serde_json::to_value(&package_info).unwrap())
+                            .unwrap(),
+                    )
+                    .unwrap();
 
-                lua.load(generator.generate_script.as_ref()).set_name("@generate.rs").exec().unwrap();
+                lua.load(generator.generate_script.as_ref())
+                    .set_name("@generate.rs")
+                    .exec()
+                    .unwrap();
             }
         }
         Command::Show { generator: _ } => {}
-        Command::Export { output: _, generator: _ } => {}
+        Command::Export {
+            output: _,
+            generator: _,
+        } => {}
     };
 }
