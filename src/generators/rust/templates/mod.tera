@@ -60,17 +60,21 @@ crate::_unions::Union{{ schema.variants | length }}<{% for variant in schema.var
 
 {% for schema in params.schemas -%}
 {% if schema.type == "record" -%}
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct {{ schema.name }} {
 {% for field in schema.fields -%}
     {{ self::render_record_field(name=field.name, schema=field.type) -}}
 {% endfor -%}
 }
 {% elif schema.type == "fixed" -%}
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct {{ schema.name }}(pub [u8;{{schema.size}}]);
 {% elif schema.type == "enum" -%}
+#[derive(serde::Serialize, serde::Deserialize)]
 pub enum {{ schema.name }} {
 {% for symbol in schema.symbols -%}
-{# #}   {{ symbol | title_case }},
+{# #}    #[serde(rename="{{ symbol }}")]
+{# #}    {{ symbol | title_case }},
 {% endfor -%}
 }
 {% endif -%}

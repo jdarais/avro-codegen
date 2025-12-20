@@ -19,7 +19,7 @@
                 "type": "enum",
                 "name": "MyEnum",
                 "namespace": "org.testorg.test",
-                "symbols": ["Yabba", "Dabba", "Doo"]
+                "symbols": ["yabba", "dabba", "doo"]
             }
         }
     ]
