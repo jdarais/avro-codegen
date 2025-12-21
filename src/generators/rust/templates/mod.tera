@@ -78,6 +78,9 @@ pub enum {{ schema.name }} {
 {% endfor -%}
 }
 {% endif -%}
+
+pub const {{ schema.name | const_case }}_SCHEMA: &str = r#"{{ schema.json }}"#;
+
 {% endfor -%}
 
 
