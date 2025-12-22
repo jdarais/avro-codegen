@@ -79,7 +79,14 @@ pub enum {{ schema.name }} {
 }
 {% endif -%}
 
-pub const {{ schema.name | const_case }}_SCHEMA: &str = r#"{{ schema.json }}"#;
+pub const {{ schema.name | const_case }}_SCHEMA: &str = "{{ schema.json | addslashes }}";
+
+impl {{ schema.name | title_case }} {
+    pub fn schema() -> apache_avro::AvroResult<apache_avro::schema::Schema> {
+        let schema_json = json!({{ schema.json }});
+        Schema::parse(&schema_json)
+    }
+}
 
 {% endfor -%}
 
