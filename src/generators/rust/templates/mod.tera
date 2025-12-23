@@ -1,3 +1,11 @@
+{% if params.schemas | length > 0 -%}
+use std::io::{Read, Write};
+
+use apache_avro::{AvroResult, schema::Schema};
+use lazy_static::lazy_static;
+use serde_json::json;
+{% endif -%}
+
 {% if params.is_lib -%}
 pub mod _unions;
 {% endif -%}
@@ -79,12 +87,32 @@ pub enum {{ schema.name }} {
 }
 {% endif -%}
 
-pub const {{ schema.name | const_case }}_SCHEMA: &str = "{{ schema.json | addslashes }}";
+lazy_static! {
+    pub static ref {{ schema.name | const_case }}_SCHEMA: Schema = Schema::parse(&json!({{ schema.json }})).unwrap();
+}
 
 impl {{ schema.name | title_case }} {
-    pub fn schema() -> apache_avro::AvroResult<apache_avro::schema::Schema> {
-        let schema_json = json!({{ schema.json }});
-        Schema::parse(&schema_json)
+    pub fn schema() -> &'static Schema { &{{ schema.name | const_case }}_SCHEMA }
+
+    pub fn reader<R: Read>(input: R) -> AvroResult<apache_avro::Reader<'static, R>> {
+        apache_avro::Reader::with_schema(&{{ schema.name | const_case }}_SCHEMA, input)
+    }
+
+    pub fn read<'a, R: Read>(reader: &mut apache_avro::Reader<'a, R>) -> Option<AvroResult<{{ schema.name | title_case }}>> {
+        match reader.next() {
+            None => None,
+            Some(val_res) => {
+                Some(val_res.and_then(|val| apache_avro::from_value(&val)))
+            }
+        }
+    }
+
+    pub fn writer<W: Write>(output: W) -> apache_avro::Writer<'static, W> {
+        apache_avro::Writer::new(&{{ schema.name | const_case }}_SCHEMA, output)
+    }
+
+    pub fn write<'a, W: Write>(&self, writer: &mut apache_avro::Writer<'a, W>) -> AvroResult<usize> {
+        writer.append_ser(self)
     }
 }
 

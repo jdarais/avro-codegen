@@ -113,8 +113,6 @@ fn read_builtin_generator_archive(archive_data: &[u8]) -> Result<Generator, anyh
         }
     }
 
-    println!("Adding generator with templates {:?}", templates);
-
     match generate_script {
         None => Err(anyhow!("No generate.lua file found")),
         Some(s) => {

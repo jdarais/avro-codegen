@@ -55,7 +55,6 @@ pub fn read_from_toml(project_dir: &Path) -> anyhow::Result<ProjectConfig> {
     let mut project_config_toml = String::with_capacity(f_size as usize);
     f.read_to_string(&mut project_config_toml)?;
     let project_config: ProjectConfigToml = toml::from_str(project_config_toml.as_str())?;
-    println!("Config toml: {:?}", &project_config);
 
     let ProjectConfigToml {
         name: name_toml,

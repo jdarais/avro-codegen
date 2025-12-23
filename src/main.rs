@@ -4,7 +4,7 @@ mod generator;
 mod lua_env;
 mod tera_env;
 
-use std::collections::{BTreeMap, HashMap};
+use std::collections::BTreeMap;
 use std::env::set_current_dir;
 use std::fs::{remove_dir_all, File};
 use std::io::Read;
@@ -131,7 +131,6 @@ fn collect_schemas(
 }
 
 fn main() {
-    println!("Hello, world!");
     let args = Cli::parse();
 
     match args.command {
