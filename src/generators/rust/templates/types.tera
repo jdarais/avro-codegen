@@ -1,0 +1,45 @@
+{% macro render_type(schema) -%}
+{%- if schema.type == "null" -%}
+    ()
+{%- elif schema.type == "boolean" -%}
+    bool
+{%- elif schema.type == "int" -%}
+    i32
+{%- elif schema.type == "long" -%}
+    i64
+{%- elif schema.type == "float" -%}
+    f32
+{%- elif schema.type == "double" -%}
+    f64
+{%- elif schema.type == "string" -%}
+    String
+{%- elif schema.type == "bytes" -%}
+    Vec<u8>
+{%- elif schema.type == "fixed" -%}
+    [u8;{{ schema.size }}]
+{%- elif schema.type == "ref" -%}
+    crate::{{ schema.fullname | replace(from=".", to="::") }}
+{%- elif schema.type == "union" -%}
+    {{ self::render_union_type(schema=schema) }}
+{%- else -%}
+    () /* unknown type: {{ schema.type }} */
+{%- endif -%}
+{% endmacro -%}
+
+{% macro render_generic_union_type(schema) -%}
+crate::_unions::Union{{ schema.variants | length }}<{% for variant in schema.variants %}{{ self::render_type(schema=variant) }}{% if not loop.last %}, {% endif %}{% endfor %}>
+{%- endmacro -%}
+
+{% macro render_union_type(schema) -%}
+{%- if schema.variants | length == 2 -%}
+    {%- if schema.variants[0].type == "null" -%}
+        Option<{{ self::render_type(schema=schema.variants[1]) }}>
+    {%- elif schema.variants[1].type == "null" -%}
+        Option<{{ self::render_type(schema=schema.variants[0]) }}>
+    {%- else -%}
+        {{ self::render_generic_union_type(schema=schema) }}
+    {%- endif -%}
+{%- else -%}
+    {{ self::render_generic_union_type(schema=schema) }}
+{%- endif -%}
+{%- endmacro -%}
