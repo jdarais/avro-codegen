@@ -172,7 +172,7 @@ fn read_builtin_generator_archive(archive_data: &[u8]) -> Result<Generator, anyh
 
 fn create_generator_from_path(generator_dir_str: &str) -> Result<Generator, anyhow::Error> {
     let generator_dir = Path::new(generator_dir_str);
-    let params_toml_path = generator_dir.join("params.toml");
+    let params_toml_path = generator_dir.join("generator.toml");
 
     // One of these paths must exist
     let generate_script_path = generator_dir.join("generate.lua");
