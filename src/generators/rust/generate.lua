@@ -21,15 +21,18 @@ end
 
 for i, schema in ipairs(schemas) do
     local module_path = array{}
-    for mod in schema.namespace:gmatch("[^.]+") do
+    for path_segment in schema.namespace:gmatch("[^.]+") do
         local parent_module_path_str = table.concat(module_path, ".")
-        module_path:push(mod)
+        module_path:push(path_segment)
         local module_path_str = table.concat(module_path, ".")
+
         if modules[module_path_str] == nil then
             modules[module_path_str] = map{ schemas = array{}, submodules = map{}, unions = map{} }
         end
-        if #mod > 0 then
-            modules[parent_module_path_str].submodules[mod] = true
+
+        -- Avoid adding a mod statement for empty path segments
+        if #path_segment > 0 then
+            modules[parent_module_path_str].submodules[path_segment] = true
         end
     end
 
@@ -39,7 +42,10 @@ for i, schema in ipairs(schemas) do
     find_unions(schema, union_cardinalities)
 end
 
-render("Cargo.toml.tera", "Cargo.toml")
+
+if params.cargo_toml then
+    render("Cargo.toml.tera", "Cargo.toml")
+end
 
 local union_cardinalities_list = array {}
 for k, _ in pairs(union_cardinalities) do
@@ -48,13 +54,13 @@ end
 render("unions.tera", "src/_unions.rs", map { union_cardinalities = union_cardinalities_list })
 
 local lib_mod = modules:remove("")
+lib_mod.submodules["_unions"] = true
 local lib_submodules = lib_mod.submodules:keys()
 table.sort(lib_submodules)
 render(
     "mod.tera",
     "src/lib.rs",
     map{
-        is_lib = true,
         submodules = lib_submodules,
         schemas = lib_mod.schemas,
         unions = lib_mod.unions
@@ -68,7 +74,6 @@ for name, module in pairs(modules) do
         "mod.tera",
         "src/"..name:gsub("[.]", "/")..".rs",
         map{
-            is_lib = false,
             submodules = submodules,
             schemas = module.schemas,
             unions = module.unions

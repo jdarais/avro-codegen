@@ -33,11 +33,6 @@ impl GeneratorContext {
     }
 }
 
-fn create_array(lua: &Lua, init: Option<mlua::Table>) -> mlua::Result<mlua::Table> {
-    let array_ctor: mlua::Function = lua.globals().get("array")?;
-    array_ctor.call(init)
-}
-
 fn render(
     generator_context: &GeneratorContext,
     lua: &Lua,
@@ -45,10 +40,13 @@ fn render(
     output: &str,
     params_opt: &Option<mlua::Table>,
 ) -> mlua::Result<()> {
-    let params: serde_json::Map<String, serde_json::Value> = match params_opt {
+    let mut combined_params = generator_context.params.clone();
+    
+    let mut params: serde_json::Map<String, serde_json::Value> = match params_opt {
         Some(t) => lua.from_value(mlua::Value::Table(t.clone()))?,
         None => serde_json::Map::new(),
     };
+    combined_params.append(&mut params);
 
     let mut context_map: serde_json::Map<String, serde_json::Value> = serde_json::Map::new();
     context_map.insert(
@@ -61,8 +59,7 @@ fn render(
         serde_json::to_value(&generator_context.package)
             .map_err(|e| mlua::Error::runtime(format!("{e}")))?,
     );
-    context_map.append(&mut generator_context.params.clone());
-    context_map.insert(String::from("params"), serde_json::Value::Object(params));
+    context_map.insert(String::from("params"), serde_json::Value::Object(combined_params));
 
     let tera = generator_context.generator.tera.lock().unwrap();
     let context = tera::Context::from_value(serde_json::Value::Object(context_map))
@@ -112,6 +109,9 @@ pub fn create_basic_lua_env() -> mlua::Result<Lua> {
 
 pub fn create_lua_env(context: GeneratorContext) -> mlua::Result<Lua> {
     let lua = create_basic_lua_env()?;
+
+    let params: mlua::Value = lua.to_value(&serde_json::Value::Object(context.params.clone()))?;
+    lua.globals().set("params", params)?;
 
     let render_func = lua.create_function(
         move |lua: &Lua, args: (String, String, Option<mlua::Table>)| {

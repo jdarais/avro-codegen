@@ -226,11 +226,17 @@ fn main() {
                     remove_dir_all(&generator_output_dir).unwrap();
                 }
 
-                let params = cfg
-                    .generator_configs
-                    .get(generator_name.as_ref())
-                    .map(|gen_cfg| gen_cfg.params.clone())
-                    .unwrap_or(serde_json::Map::new());
+                let mut params: serde_json::Map<String, serde_json::Value> = serde_json::Map::new();
+                for (name, param) in &generator.params {
+                    let val = serde_json::to_value(param.default.clone()).unwrap();
+                    params.insert(String::from(name.as_ref()), val);
+                }
+
+                if let Some(generator_config) = cfg.generator_configs.get(generator_name.as_ref()) {
+                    for (name, param) in &generator_config.params {
+                        params.insert(name.clone(), param.clone());
+                    }
+                }
 
                 let lua = create_lua_env(GeneratorContext::new(
                     generator_output_dir,
@@ -262,7 +268,22 @@ fn main() {
                     .unwrap();
             }
         }
-        Command::Show { generator: _ } => {}
+        Command::Show { generator } => {
+            let gen_res = get_generator(generator.as_ref());
+            let generator_info = match gen_res {
+                Ok(g) => g,
+                Err(e) => { panic!("Unknown generator name '{generator}'"); }
+            };
+
+            println!("Generator: {generator}");
+            println!("Description: {}", generator_info.description);
+            println!("");
+            println!("Params:");
+
+            for (name, param) in &generator_info.params {
+                println!("  {}: {} (default={})", name, param.description, param.default);
+            }
+        }
         Command::Export {
             output: _,
             generator: _,

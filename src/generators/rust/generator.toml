@@ -1,0 +1,5 @@
+description = "Generate rust code that serializes structures using serde and apache_avro packages"
+
+[params.cargo_toml]
+default = true
+description = "Whether or not to create a Cargo.toml project file for the generated code"

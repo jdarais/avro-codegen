@@ -4,6 +4,4 @@ description = "An exmaple project that generates some basic types for rust and t
 include = ["**/*.avsc"]
 default_generators = ["rust"]
 
-[generators.rust.params]
-serde = false
 

@@ -8,10 +8,6 @@ use lazy_static::lazy_static;
 use serde_json::json;
 {% endif -%}
 
-{% if params.is_lib -%}
-pub mod _unions;
-{% endif -%}
-
 {% for mod in params.submodules -%}
 pub mod {{ mod }};
 {% endfor -%}
