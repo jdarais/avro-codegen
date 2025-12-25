@@ -272,7 +272,7 @@ fn main() {
             let gen_res = get_generator(generator.as_ref());
             let generator_info = match gen_res {
                 Ok(g) => g,
-                Err(e) => { panic!("Unknown generator name '{generator}'"); }
+                Err(e) => { panic!("Error getting generator '{generator}': {e}"); }
             };
 
             println!("Generator: {generator}");
