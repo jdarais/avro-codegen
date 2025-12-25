@@ -19,17 +19,17 @@ pub mod {{ mod }};
 
 {% for schema in params.schemas -%}
 {% if schema.type == "record" -%}
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, PartialEq)]
 pub struct {{ schema.name }} {
 {% for field in schema.fields -%}
     {{ self::render_record_field(name=field.name, schema=field.type) -}}
 {% endfor -%}
 }
 {% elif schema.type == "fixed" -%}
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, PartialEq)]
 pub struct {{ schema.name }}(pub [u8;{{schema.size}}]);
 {% elif schema.type == "enum" -%}
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, PartialEq)]
 pub enum {{ schema.name }} {
 {% for symbol in schema.symbols -%}
 {# #}    #[serde(rename="{{ symbol }}")]
@@ -49,7 +49,7 @@ impl {{ schema.name | title_case }} {
         apache_avro::Reader::with_schema(&{{ schema.name | const_case }}_SCHEMA, input)
     }
 
-    pub fn read<'a, R: Read>(reader: &mut apache_avro::Reader<'a, R>) -> Option<AvroResult<{{ schema.name | title_case }}>> {
+    pub fn read_next<'a, R: Read>(reader: &mut apache_avro::Reader<'a, R>) -> Option<AvroResult<{{ schema.name | title_case }}>> {
         match reader.next() {
             None => None,
             Some(val_res) => {
@@ -58,12 +58,29 @@ impl {{ schema.name | title_case }} {
         }
     }
 
+    pub fn read_single<'a, R: Read>(input: R) -> Option<AvroResult<{{ schema.name | title_case }}>> {
+        let mut reader = match {{ schema.name | title_case }}::reader(input) {
+            Ok(r) => r,
+            Err(e) => { return Some(Err(e)); }
+        };
+        {{ schema.name | title_case }}::read_next(&mut reader)
+    }
+
     pub fn writer<W: Write>(output: W) -> apache_avro::Writer<'static, W> {
         apache_avro::Writer::new(&{{ schema.name | const_case }}_SCHEMA, output)
     }
 
     pub fn write<'a, W: Write>(&self, writer: &mut apache_avro::Writer<'a, W>) -> AvroResult<usize> {
         writer.append_ser(self)
+    }
+
+    pub fn write_single<'a, W: Write>(&self, output: W) -> AvroResult<usize> {
+        let mut bytes_written: usize = 0;
+
+        let mut writer = {{ schema.name | title_case }}::writer(output);
+        bytes_written += self.write(&mut writer)?;
+        bytes_written += writer.flush()?;
+        Ok(bytes_written)
     }
 }
 

@@ -1,0 +1,10 @@
+[package]
+name = "rust_and_ts_test"
+version = "0.1.0"
+description = "Tests for the rust_and_ts generated code"
+edition = "2021"
+rust-version = "1.81"
+
+[dependencies]
+rust_and_ts = { path = "../../output/rust" }
+anyhow = "1.0.95"
