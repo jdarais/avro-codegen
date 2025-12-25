@@ -199,10 +199,11 @@ fn main() {
                 collect_schemas(&mut all_schemas, &schema_info.schema, &schema_info);
             }
 
-            let all_schemas_json: Vec<serde_json::Value> = all_schemas
-                .iter()
-                .map(|(_, v)| schema_to_json(&v.schema, v))
-                .collect();
+            let mut all_schemas_json: Vec<serde_json::Value> = Vec::new();
+            for (_, v) in &all_schemas {
+                all_schemas_json.push(schema_to_json(&v.schema, v, schemas.as_slice()).unwrap());
+            }
+            let all_schemas_json = all_schemas_json;
 
             let mut generators: Vec<(Arc<str>, Arc<Generator>)> = Vec::new();
             for gen_name in cfg.default_generators.iter() {

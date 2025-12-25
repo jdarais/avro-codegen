@@ -49,20 +49,15 @@ impl {{ schema.name | title_case }} {
         apache_avro::Reader::with_schema(&{{ schema.name | const_case }}_SCHEMA, input)
     }
 
-    pub fn read_next<'a, R: Read>(reader: &mut apache_avro::Reader<'a, R>) -> Option<AvroResult<{{ schema.name | title_case }}>> {
+    pub fn read_next<'a, R: Read>(reader: &mut apache_avro::Reader<'a, R>) -> AvroResult<Option<{{ schema.name | title_case }}>> {
         match reader.next() {
-            None => None,
-            Some(val_res) => {
-                Some(val_res.and_then(|val| apache_avro::from_value(&val)))
-            }
+            None => Ok(None),
+            Some(val_res) => val_res.and_then(|val| apache_avro::from_value(&val)).map(|val| Some(val))
         }
     }
 
-    pub fn read_single<'a, R: Read>(input: R) -> Option<AvroResult<{{ schema.name | title_case }}>> {
-        let mut reader = match {{ schema.name | title_case }}::reader(input) {
-            Ok(r) => r,
-            Err(e) => { return Some(Err(e)); }
-        };
+    pub fn read_single<'a, R: Read>(input: R) -> AvroResult<Option<{{ schema.name | title_case }}>> {
+        let mut reader = {{ schema.name | title_case }}::reader(input)?;
         {{ schema.name | title_case }}::read_next(&mut reader)
     }
 
