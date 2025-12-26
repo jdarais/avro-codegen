@@ -47,6 +47,8 @@ if params.cargo_toml then
     render("Cargo.toml.tera", "Cargo.toml")
 end
 
+render("rw.tera", "src/_rw.rs")
+
 local union_cardinalities_list = array {}
 for k, _ in pairs(union_cardinalities) do
     union_cardinalities_list:push(k)
@@ -54,6 +56,7 @@ end
 render("unions.tera", "src/_unions.rs", map { union_cardinalities = union_cardinalities_list })
 
 local lib_mod = modules:remove("")
+lib_mod.submodules["_rw"] = true
 lib_mod.submodules["_unions"] = true
 local lib_submodules = lib_mod.submodules:keys()
 table.sort(lib_submodules)

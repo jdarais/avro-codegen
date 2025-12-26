@@ -1,5 +1,5 @@
 [package]
-name = "{{ package.name }}"
+name = "{{ package.name | kebab_case }}"
 version = "{{ package.version }}"
 description = "{{ package.description }}"
 edition = "2021"

@@ -375,7 +375,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8d942b98df5e658f56f20d592c7f868833fe38115e65c33003d8cd224b0155da"
 
 [[package]]
-name = "rust_and_ts"
+name = "rust-and-ts"
 version = "0.1.0"
 dependencies = [
  "apache-avro",
@@ -385,11 +385,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "rust_and_ts_test"
+name = "rust-and-ts-test"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "rust_and_ts",
+ "apache-avro",
+ "rust-and-ts",
 ]
 
 [[package]]

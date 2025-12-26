@@ -1,0 +1,51 @@
+use std::io::Read;
+use std::marker::PhantomData;
+
+use apache_avro::{AvroResult, Schema};
+use apache_avro::Reader;
+use serde::de::DeserializeOwned;
+
+
+pub trait AvroSchemaRef<'a> {
+    fn get_schema_ref() -> &'a Schema;
+}
+
+pub struct TypedReader<'a, R: Read, T: DeserializeOwned> {
+    reader: Reader<'a, R>,
+    read_type: PhantomData<T>,
+}
+
+impl <'a, R: Read, T: DeserializeOwned> TypedReader<'a, R, T> {
+    pub fn new(schema: &'a Schema, input: R) -> AvroResult<TypedReader<'a, R, T>> {
+        Ok(TypedReader {
+            reader: Reader::with_schema(schema, input)?,
+            read_type: PhantomData
+        })
+    }
+
+    pub fn reader(&self) -> &Reader<'a, R> {
+        &self.reader
+    }
+}
+
+impl <'a, R: Read, T: DeserializeOwned + AvroSchemaRef<'a>> TypedReader<'a, R, T> {
+    pub fn from_type(input: R) -> AvroResult<TypedReader<'a, R, T>> {
+        Ok(TypedReader {
+            reader: Reader::with_schema(T::get_schema_ref(), input)?,
+            read_type: PhantomData
+        })
+    }
+}
+
+impl <'a, R: Read, T: DeserializeOwned> Iterator for TypedReader<'a, R, T> {
+    type Item = AvroResult<T>;
+
+    fn next(&mut self) -> Option<AvroResult<T>> {
+        let val_res_opt = self.reader.next();
+
+        match val_res_opt {
+            Some(val_res) => Some(val_res.and_then(|val| apache_avro::from_value(&val))),
+            None => None
+        }
+    }
+}
