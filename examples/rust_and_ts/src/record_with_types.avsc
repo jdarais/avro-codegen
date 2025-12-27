@@ -1,0 +1,72 @@
+{
+    "type": "record",
+    "name": "RecordWithTypes",
+    "namespace": "org.testorg",
+    "fields": [
+        { "name": "nullableBoolean", "type": ["null", "boolean"] },
+        { "name": "intValue", "type": "int" },
+        { "name": "longValue", "type": "long" },
+        { "name": "floatValue", "type": "float" },
+        { "name": "doubleValue", "type": "double" },
+        { "name": "bytesValue", "type": "bytes" },
+        { "name": "stringValue", "type": "string" },
+        { "name": "unionValue", "type": ["float", "double", "string"]},
+        {
+            "name": "recordValue",
+            "type": {
+                "type": "record",
+                "name": "Size",
+                "fields": [
+                    { "name": "lengthM", "type": "float" },
+                    { "name": "widthM", "type": "float" }
+                ]
+            }
+        },
+        {
+            "name": "enumValue",
+            "type": {
+                "type": "enum",
+                "name": "Suit",
+                "symbols": ["clubs", "spades", "hearts", "diamonds"]
+            }
+        },
+        {
+            "name": "fixedValue",
+            "type": {
+                "type": "fixed",
+                "name": "LongWord",
+                "size": 8
+            }
+        },
+        {
+            "name": "numbers",
+            "type": {
+                "type": "array",
+                "items": "int"
+            }
+        },
+        {
+            "name": "ages",
+            "type": {
+                "type": "map",
+                "values": "int"
+            }
+        },
+        {
+            "name": "decimalValue",
+            "type": {
+                "type": "bytes",
+                "logicalType": "decimal",
+                "precision": 150,
+                "scale": 4
+            }
+        },
+        {
+            "name": "bigDecimalValue",
+            "type": {
+                "type": "bytes",
+                "logicalType": "big-decimal"
+            }
+        }
+    ]
+}

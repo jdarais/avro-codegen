@@ -6,7 +6,9 @@ edition = "2021"
 rust-version = "1.81"
 
 [dependencies]
-apache-avro = "^0.19.0"
-lazy_static = "^1.5.0"
-serde = "^1.0.228"
-serde_json = "^1.0.146"
+apache-avro = { git = "https://github.com/apache/avro-rs.git" }
+bigdecimal = "0.4.9"
+lazy_static = "1.5.0"
+serde = "1.0.228"
+serde_bytes = "0.11.19"
+serde_json = "1.0.146"

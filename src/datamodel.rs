@@ -1,5 +1,5 @@
-use apache_avro::schema::Schema;
-use apache_avro::AvroResult;
+use anyhow::anyhow;
+use apache_avro::schema::{InnerDecimalSchema, RecordField, Schema, UnionSchema, UuidSchema};
 use serde::Serialize;
 use serde_json::json;
 
@@ -19,9 +19,58 @@ pub struct PackageInfo {
     pub description: String,
 }
 
+pub fn denormalize_schema(schema: &Schema, schemata: &[Schema]) -> anyhow::Result<Schema> {
+    match schema {
+        Schema::Ref { name } => {
+            let replacement_schema = schemata
+                .iter()
+                .find(|s| s.name().map(|n| *n == *name).unwrap_or(false));
+            if let Some(schema) = replacement_schema {
+                let denorm = denormalize_schema(schema, schemata)?;
+                Ok(denorm)
+            } else {
+                Err(anyhow!("Error resolving schema with name {}", name.clone()))
+            }
+        }
+        Schema::Record(record_schema) => {
+            let mut denorm_schema = record_schema.clone();
+            let mut fields: Vec<RecordField> = Vec::with_capacity(record_schema.fields.len());
 
-pub fn schema_to_json(schema: &Schema, schema_info: &SchemaInfo, schemata: &[Schema]) -> AvroResult<serde_json::Value> {
-    let schema_json = schema.independent_canonical_form(schemata)?;
+            for mut field in denorm_schema.fields.drain(..) {
+                field.schema = denormalize_schema(&field.schema, schemata)?;
+                fields.push(field);
+            }
+
+            denorm_schema.fields = fields;
+
+            Ok(Schema::Record(denorm_schema))
+        }
+        Schema::Array(array_schema) => {
+            let mut denorm_schema = array_schema.clone();
+            denorm_schema.items = Box::new(denormalize_schema(&array_schema.items, schemata)?);
+            Ok(Schema::Array(denorm_schema))
+        }
+        Schema::Map(map_schema) => {
+            let mut denorm_schema = map_schema.clone();
+            denorm_schema.types = Box::new(denormalize_schema(&map_schema.types, schemata)?);
+            Ok(Schema::Map(denorm_schema))
+        }
+        Schema::Union(union_schema) => {
+            let mut variant_schemas: Vec<Schema> = Vec::with_capacity(union_schema.variants().len());
+
+            for variant_schema in union_schema.variants() {
+                variant_schemas.push(denormalize_schema(&variant_schema, schemata)?);
+            }
+
+            Ok(Schema::Union(UnionSchema::new(variant_schemas)?))
+        }
+        _ => Ok(schema.clone()),
+    }
+}
+
+
+pub fn schema_to_json(schema: &Schema, schema_info: &SchemaInfo, schemata: &[Schema]) -> anyhow::Result<serde_json::Value> {
+    let schema_json = serde_json::to_string(&denormalize_schema(schema, schemata)?)?;
     match schema {
         Schema::Null => Ok(json!({
             "type": "null",
@@ -149,7 +198,16 @@ pub fn schema_to_json(schema: &Schema, schema_info: &SchemaInfo, schemata: &[Sch
             }
         }
         Schema::Decimal(decimal_schema) => {
-            let inner = schema_to_json(&decimal_schema.inner.as_ref(), schema_info, schemata)?;
+            let inner: serde_json::Value = match &decimal_schema.inner {
+                InnerDecimalSchema::Bytes => {
+                    let mut bytes_schema: serde_json::Map<String, serde_json::Value> = serde_json::Map::new();
+                    bytes_schema.insert(String::from("type"), serde_json::Value::String("bytes".into()));
+                    serde_json::Value::Object(bytes_schema)
+                }
+                InnerDecimalSchema::Fixed(fixed_schema) => {
+                    schema_to_json(&Schema::Fixed(fixed_schema.clone()), schema_info, schemata)?
+                }
+            };
 
             match inner {
                 serde_json::Value::Object(mut obj) => {
@@ -167,11 +225,29 @@ pub fn schema_to_json(schema: &Schema, schema_info: &SchemaInfo, schemata: &[Sch
             "logical_type": "big-decimal",
             "json": schema_json,
         })),
-        Schema::Uuid => Ok(json!({
-            "type": "string",
-            "logical_type": "uuid",
-            "json": schema_json,
-        })),
+        Schema::Uuid(uuid_schema) => match uuid_schema {
+            UuidSchema::Bytes => Ok(json!({
+                "type": "bytes",
+                "logical_type": "uuid",
+                "json": schema_json,
+            })),
+            UuidSchema::String => Ok(json!({
+                "type": "string",
+                "logical_type": "uuid",
+                "json": schema_json
+            })),
+            UuidSchema::Fixed(fixed_schema) => {
+                let inner = schema_to_json(&Schema::Fixed(fixed_schema.clone()), schema_info, schemata)?;
+
+                match inner {
+                    serde_json::Value::Object(mut obj) => {
+                        obj.insert(String::from("logicalType"), serde_json::Value::String("logicalType".into()));
+                        Ok(serde_json::Value::Object(obj))
+                    },
+                    _ => { panic!("Expected schema_to_json to return an object"); }
+                }
+            }
+        },
         Schema::Date => Ok(json!({
             "type": "int",
             "logical_type": "date",

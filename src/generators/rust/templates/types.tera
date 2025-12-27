@@ -1,5 +1,9 @@
 {% macro render_type(schema) -%}
-{%- if schema.type == "null" -%}
+{%- if schema.logical_type is defined and schema.logical_type == "decimal"-%}
+    apache_avro::Decimal
+{%- elif schema.logical_type is defined and schema.logical_type == "big-decimal" -%}
+    bigdecimal::BigDecimal
+{%- elif schema.type == "null" -%}
     ()
 {%- elif schema.type == "boolean" -%}
     bool
@@ -11,16 +15,20 @@
     f32
 {%- elif schema.type == "double" -%}
     f64
-{%- elif schema.type == "string" -%}
-    String
 {%- elif schema.type == "bytes" -%}
     Vec<u8>
-{%- elif schema.type == "fixed" -%}
-    [u8;{{ schema.size }}]
-{%- elif schema.type == "ref" -%}
-    crate::{{ schema.fullname | replace(from=".", to="::") }}
+{%- elif schema.type == "string" -%}
+    String
+{%- elif schema.type == "array" -%}
+    Vec<{{ self::render_type(schema=schema.items) }}>
+{%- elif schema.type == "map" -%}
+    std::collections::HashMap<String, {{ self::render_type(schema=schema.values) }}>
 {%- elif schema.type == "union" -%}
     {{ self::render_union_type(schema=schema) }}
+{%- elif schema.type == "ref" -%}
+    crate::{{ schema.fullname | replace(from=".", to="::") }}
+{%- elif schema.type == "fixed" -%}
+    [u8;{{ schema.size }}]
 {%- else -%}
     () /* unknown type: {{ schema.type }} */
 {%- endif -%}
