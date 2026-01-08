@@ -3,6 +3,10 @@
     apache_avro::Decimal
 {%- elif schema.logical_type is defined and schema.logical_type == "big-decimal" -%}
     bigdecimal::BigDecimal
+{%- elif schema.logical_type is defined and schema.logical_type == "duration" -%}
+    apache_avro::Duration
+{%- elif schema.logical_type is defined and schema.logical_type == "uuid" -%}
+    uuid::Uuid
 {%- elif schema.type == "null" -%}
     ()
 {%- elif schema.type == "boolean" -%}

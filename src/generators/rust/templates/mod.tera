@@ -37,8 +37,10 @@ pub struct {{ schema.name }} {
 {% elif schema.type == "fixed" -%}
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct {{ schema.name }}(
-    #[serde(with="serde_bytes")]
-    pub [u8;{{schema.size}}]
+{% if schema.logical_type is not defined -%}
+{# #}    #[serde(with="serde_bytes")]
+{% endif -%}
+{# #}    pub {{ types::render_type(schema=schema) }}
 );
 {% elif schema.type == "enum" -%}
 #[derive(Serialize, Deserialize, Debug, PartialEq)]

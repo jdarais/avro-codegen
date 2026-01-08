@@ -1,9 +1,8 @@
-
 use std::env;
 use std::ffi::OsString;
 use std::fs::{read_dir, File};
 use std::io::{self, Seek, SeekFrom};
-use std::path::{PathBuf, Path};
+use std::path::{Path, PathBuf};
 
 use flate2::write::GzEncoder;
 use flate2::Compression;
@@ -24,12 +23,15 @@ fn build_file_list(base_path: &Path, path: &Path, files: &mut Vec<PathBuf>) -> i
 }
 
 fn main() {
-    let out_dir = PathBuf::from(env::var("OUT_DIR").expect("OUT_DIR env var is expected to be defined"));
+    let out_dir =
+        PathBuf::from(env::var("OUT_DIR").expect("OUT_DIR env var is expected to be defined"));
 
-    let generators_dir = read_dir(Path::new("src/generators")).expect("Expected to be able to read src/generators dir in project directory");
+    let generators_dir = read_dir(Path::new("src/generators"))
+        .expect("Expected to be able to read src/generators dir in project directory");
 
     for generator_dir_res in generators_dir {
-        let generator_dir = generator_dir_res.expect("Expected to be able to read directories under src/generators");
+        let generator_dir = generator_dir_res
+            .expect("Expected to be able to read directories under src/generators");
 
         let mut file_paths: Vec<PathBuf> = Vec::new();
         build_file_list(&generator_dir.path(), Path::new(""), &mut file_paths).unwrap();
@@ -60,6 +62,10 @@ fn main() {
 
         tar_writer.finish().unwrap();
 
-        println!("cargo::rustc-env=GENERATOR_ARCHIVE_PATH_{}={}", &generator_dir.file_name().into_string().unwrap(), &archive_path.into_os_string().into_string().unwrap());
+        println!(
+            "cargo::rustc-env=GENERATOR_ARCHIVE_PATH_{}={}",
+            &generator_dir.file_name().into_string().unwrap(),
+            &archive_path.into_os_string().into_string().unwrap()
+        );
     }
 }

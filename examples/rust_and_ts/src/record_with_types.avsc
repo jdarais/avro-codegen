@@ -67,6 +67,24 @@
                 "type": "bytes",
                 "logicalType": "big-decimal"
             }
+        },
+        {
+            "name": "durationValue",
+            "type": {
+                "type": "fixed",
+                "logicalType": "duration",
+                "name": "Duration",
+                "size": 12
+            }
+        },
+        {
+            "name": "uuidValue",
+            "type": {
+                "type": "fixed",
+                "logicalType": "uuid",
+                "name": "Uuid",
+                "size": 16
+            }
         }
     ]
 }

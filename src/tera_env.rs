@@ -111,9 +111,7 @@ fn to_snake_case(lua: &mlua::Lua, val: &Value) -> mlua::Result<Value> {
                 .call((lua_val,))
                 .map(|s: String| Value::String(s))
         }
-        _ => Err(mlua::Error::runtime(
-            "Argument must be a string",
-        )),
+        _ => Err(mlua::Error::runtime("Argument must be a string")),
     }
 }
 
@@ -125,9 +123,7 @@ fn to_kebab_case(lua: &mlua::Lua, val: &Value) -> mlua::Result<Value> {
                 .call((lua_val,))
                 .map(|s: String| Value::String(s))
         }
-        _ => Err(mlua::Error::runtime(
-            "Argument must be a string",
-        )),
+        _ => Err(mlua::Error::runtime("Argument must be a string")),
     }
 }
 
@@ -139,9 +135,7 @@ fn to_camel_case(lua: &mlua::Lua, val: &Value) -> mlua::Result<Value> {
                 .call((lua_val,))
                 .map(|s: String| Value::String(s))
         }
-        _ => Err(mlua::Error::runtime(
-            "Argument must be a string",
-        )),
+        _ => Err(mlua::Error::runtime("Argument must be a string")),
     }
 }
 
@@ -153,9 +147,7 @@ fn to_title_case(lua: &mlua::Lua, val: &Value) -> mlua::Result<Value> {
                 .call((lua_val,))
                 .map(|s: String| Value::String(s))
         }
-        _ => Err(mlua::Error::runtime(
-            "Argument must be a string",
-        )),
+        _ => Err(mlua::Error::runtime("Argument must be a string")),
     }
 }
 
@@ -167,9 +159,7 @@ fn to_const_case(lua: &mlua::Lua, val: &Value) -> mlua::Result<Value> {
                 .call((lua_val,))
                 .map(|s: String| Value::String(s))
         }
-        _ => Err(mlua::Error::runtime(
-            "Argument must be a string",
-        )),
+        _ => Err(mlua::Error::runtime("Argument must be a string")),
     }
 }
 
@@ -201,7 +191,7 @@ pub fn create_tera() -> Tera {
             "kebab_case",
             move |val: &Value, _: &HashMap<String, Value>| {
                 to_kebab_case(&lua_clone, val).map_err(|e| tera::Error::msg(e.to_string()))
-            }
+            },
         );
 
         let lua_clone = lua.clone();

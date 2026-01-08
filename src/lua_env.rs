@@ -41,7 +41,7 @@ fn render(
     params_opt: &Option<mlua::Table>,
 ) -> mlua::Result<()> {
     let mut combined_params = generator_context.params.clone();
-    
+
     let mut params: serde_json::Map<String, serde_json::Value> = match params_opt {
         Some(t) => lua.from_value(mlua::Value::Table(t.clone()))?,
         None => serde_json::Map::new(),
@@ -59,7 +59,10 @@ fn render(
         serde_json::to_value(&generator_context.package)
             .map_err(|e| mlua::Error::runtime(format!("{e}")))?,
     );
-    context_map.insert(String::from("params"), serde_json::Value::Object(combined_params));
+    context_map.insert(
+        String::from("params"),
+        serde_json::Value::Object(combined_params),
+    );
 
     let tera = generator_context.generator.tera.lock().unwrap();
     let context = tera::Context::from_value(serde_json::Value::Object(context_map))
@@ -131,129 +134,169 @@ mod tests {
     #[test]
     fn test_string_title_to_snake_case() -> mlua::Result<()> {
         let lua = create_basic_lua_env()?;
-        lua.load(r#"
+        lua.load(
+            r#"
             local title_case = "ThisIsATitleCaseName"
             local snake_case = title_case:to_snake_case()
             assert(snake_case == "this_is_a_title_case_name", snake_case)
-        "#).exec()
+        "#,
+        )
+        .exec()
     }
 
     #[test]
     fn test_string_title_with_acronym_to_snake_case() -> mlua::Result<()> {
         let lua = create_basic_lua_env()?;
-        lua.load(r#"
+        lua.load(
+            r#"
             local title_case = "ThisIsSCUBATitleCaseName"
             local snake_case = title_case:to_snake_case()
             assert(snake_case == "this_is_scuba_title_case_name", snake_case)
-        "#).exec()
+        "#,
+        )
+        .exec()
     }
 
     #[test]
     fn test_string_camel_to_snake_case() -> mlua::Result<()> {
         let lua = create_basic_lua_env()?;
-        lua.load(r#"
+        lua.load(
+            r#"
             local title_case = "thisIsACamelCaseName"
             local snake_case = title_case:to_snake_case()
             assert(snake_case == "this_is_a_camel_case_name", snake_case)
-        "#).exec()
+        "#,
+        )
+        .exec()
     }
 
     #[test]
     fn test_string_camel_with_number_to_snake_case() -> mlua::Result<()> {
-        create_basic_lua_env()?.load(r#"
+        create_basic_lua_env()?
+            .load(
+                r#"
             local title_case = "thisIsA10CamelCaseName"
             local snake_case = title_case:to_snake_case()
             assert(snake_case == "this_is_a_10_camel_case_name", snake_case)
-        "#).exec()
+        "#,
+            )
+            .exec()
     }
 
     #[test]
     fn test_string_const_to_snake_case_with_word_sep_arg() -> mlua::Result<()> {
-        create_basic_lua_env()?.load(r#"
+        create_basic_lua_env()?
+            .load(
+                r#"
             local const_case = "THIS_IS_A_CONST300_CASE_NAME"
             local snake_case = const_case:to_snake_case("_")
             assert(snake_case == "this_is_a_const300_case_name", snake_case)
-        "#).exec()
+        "#,
+            )
+            .exec()
     }
 
     #[test]
     fn test_string_title_to_kebab_case() -> mlua::Result<()> {
         let lua = create_basic_lua_env()?;
-        lua.load(r#"
+        lua.load(
+            r#"
             local title_case = "ThisIsATitleCaseName"
             local kebab_case = title_case:to_kebab_case()
             assert(kebab_case == "this-is-a-title-case-name", kebab_case)
-        "#).exec()
+        "#,
+        )
+        .exec()
     }
 
     #[test]
     fn test_string_title_with_acronym_to_kebab_case() -> mlua::Result<()> {
         let lua = create_basic_lua_env()?;
-        lua.load(r#"
+        lua.load(
+            r#"
             local title_case = "ThisIsSCUBATitleCaseName"
             local kebab_case = title_case:to_kebab_case()
             assert(kebab_case == "this-is-scuba-title-case-name", kebab_case)
-        "#).exec()
+        "#,
+        )
+        .exec()
     }
 
     #[test]
     fn test_string_camel_to_kebab_case() -> mlua::Result<()> {
         let lua = create_basic_lua_env()?;
-        lua.load(r#"
+        lua.load(
+            r#"
             local title_case = "thisIsACamelCaseName"
             local kebab_case = title_case:to_kebab_case()
             assert(kebab_case == "this-is-a-camel-case-name", kebab_case)
-        "#).exec()
+        "#,
+        )
+        .exec()
     }
 
     #[test]
     fn test_string_camel_with_number_to_kebab_case() -> mlua::Result<()> {
         let lua = create_basic_lua_env()?;
-        lua.load(r#"
+        lua.load(
+            r#"
             local title_case = "thisIsA10CamelCaseName"
             local kebab_case = title_case:to_kebab_case()
             assert(kebab_case == "this-is-a-10-camel-case-name", kebab_case)
-        "#).exec()
+        "#,
+        )
+        .exec()
     }
 
     #[test]
     fn test_string_snake_to_title_case() -> mlua::Result<()> {
         let lua = create_basic_lua_env()?;
-        lua.load(r#"
+        lua.load(
+            r#"
             local snake_case = "this_is_a_snake_case_name"
             local title_case = snake_case:to_title_case()
             assert(title_case == "ThisIsASnakeCaseName", title_case)
-        "#).exec()
+        "#,
+        )
+        .exec()
     }
 
     #[test]
     fn test_string_snake_with_number_to_title_case() -> mlua::Result<()> {
         let lua = create_basic_lua_env()?;
-        lua.load(r#"
+        lua.load(
+            r#"
             local snake_case = "this_is_a_100_snake_case_name"
             local title_case = snake_case:to_title_case()
             assert(title_case == "ThisIsA100SnakeCaseName", title_case)
-        "#).exec()
+        "#,
+        )
+        .exec()
     }
 
     #[test]
     fn test_string_with_spaces_to_title_case() -> mlua::Result<()> {
         let lua = create_basic_lua_env()?;
-        lua.load(r#"
+        lua.load(
+            r#"
             local space_case = "this is a string with spaces"
             local title_case = space_case:to_title_case()
             assert(title_case == "ThisIsAStringWithSpaces", title_case)
-        "#).exec()
+        "#,
+        )
+        .exec()
     }
 
     #[test]
     fn test_string_title_with_number_to_const_case() -> mlua::Result<()> {
         let lua = create_basic_lua_env()?;
-        lua.load(r#"
+        lua.load(
+            r#"
             local title_case = "ThisIsATitleCaseName5000"
             local const_case = title_case:to_const_case()
             assert(const_case == "THIS_IS_A_TITLE_CASE_NAME_5000", const_case)
-        "#).exec()
+        "#,
+        )
+        .exec()
     }
-
 }

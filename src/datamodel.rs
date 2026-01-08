@@ -56,7 +56,8 @@ pub fn denormalize_schema(schema: &Schema, schemata: &[Schema]) -> anyhow::Resul
             Ok(Schema::Map(denorm_schema))
         }
         Schema::Union(union_schema) => {
-            let mut variant_schemas: Vec<Schema> = Vec::with_capacity(union_schema.variants().len());
+            let mut variant_schemas: Vec<Schema> =
+                Vec::with_capacity(union_schema.variants().len());
 
             for variant_schema in union_schema.variants() {
                 variant_schemas.push(denormalize_schema(&variant_schema, schemata)?);
@@ -68,8 +69,11 @@ pub fn denormalize_schema(schema: &Schema, schemata: &[Schema]) -> anyhow::Resul
     }
 }
 
-
-pub fn schema_to_json(schema: &Schema, schema_info: &SchemaInfo, schemata: &[Schema]) -> anyhow::Result<serde_json::Value> {
+pub fn schema_to_json(
+    schema: &Schema,
+    schema_info: &SchemaInfo,
+    schemata: &[Schema],
+) -> anyhow::Result<serde_json::Value> {
     let schema_json = serde_json::to_string(&denormalize_schema(schema, schemata)?)?;
     match schema {
         Schema::Null => Ok(json!({
@@ -134,14 +138,15 @@ pub fn schema_to_json(schema: &Schema, schema_info: &SchemaInfo, schemata: &[Sch
                     "fullname": record_schema.name.fullname(None)
                 }))
             } else {
-                let mut fields: Vec<serde_json::Value> = Vec::with_capacity(record_schema.fields.len());
+                let mut fields: Vec<serde_json::Value> =
+                    Vec::with_capacity(record_schema.fields.len());
                 for field in record_schema.fields.iter() {
                     fields.push(json!({
                         "name": field.name,
                         "type": schema_to_json(&field.schema, schema_info, schemata)?,
                     }));
                 }
-    
+
                 Ok(json!({
                     "type": "record",
                     "name": record_schema.name.name,
@@ -200,8 +205,12 @@ pub fn schema_to_json(schema: &Schema, schema_info: &SchemaInfo, schemata: &[Sch
         Schema::Decimal(decimal_schema) => {
             let inner: serde_json::Value = match &decimal_schema.inner {
                 InnerDecimalSchema::Bytes => {
-                    let mut bytes_schema: serde_json::Map<String, serde_json::Value> = serde_json::Map::new();
-                    bytes_schema.insert(String::from("type"), serde_json::Value::String("bytes".into()));
+                    let mut bytes_schema: serde_json::Map<String, serde_json::Value> =
+                        serde_json::Map::new();
+                    bytes_schema.insert(
+                        String::from("type"),
+                        serde_json::Value::String("bytes".into()),
+                    );
                     serde_json::Value::Object(bytes_schema)
                 }
                 InnerDecimalSchema::Fixed(fixed_schema) => {
@@ -211,13 +220,32 @@ pub fn schema_to_json(schema: &Schema, schema_info: &SchemaInfo, schemata: &[Sch
 
             match inner {
                 serde_json::Value::Object(mut obj) => {
-                    obj.insert(String::from("logical_type"), serde_json::Value::String("decimal".into()));
-                    obj.insert(String::from("precision"), serde_json::Value::Number(decimal_schema.precision.into()));
-                    obj.insert(String::from("scale"), serde_json::Value::Number(decimal_schema.scale.into()));
-                    obj.insert(String::from("json"), serde_json::Value::String(schema_json.into()));
-                    Ok(serde_json::Value::Object(obj))
+                    match obj.get("type").and_then(serde_json::Value::as_str) {
+                        Some("ref") => Ok(serde_json::Value::Object(obj)),
+                        _ => {
+                            obj.insert(
+                                String::from("logical_type"),
+                                serde_json::Value::String("decimal".into()),
+                            );
+                            obj.insert(
+                                String::from("precision"),
+                                serde_json::Value::Number(decimal_schema.precision.into()),
+                            );
+                            obj.insert(
+                                String::from("scale"),
+                                serde_json::Value::Number(decimal_schema.scale.into()),
+                            );
+                            obj.insert(
+                                String::from("json"),
+                                serde_json::Value::String(schema_json.into()),
+                            );
+                            Ok(serde_json::Value::Object(obj))
+                        }
+                    }
                 }
-                _ => { panic!("Expected schema_to_json to return a json object"); }
+                _ => {
+                    panic!("Expected schema_to_json to return a json object");
+                }
             }
         }
         Schema::BigDecimal => Ok(json!({
@@ -237,14 +265,25 @@ pub fn schema_to_json(schema: &Schema, schema_info: &SchemaInfo, schemata: &[Sch
                 "json": schema_json
             })),
             UuidSchema::Fixed(fixed_schema) => {
-                let inner = schema_to_json(&Schema::Fixed(fixed_schema.clone()), schema_info, schemata)?;
+                let inner =
+                    schema_to_json(&Schema::Fixed(fixed_schema.clone()), schema_info, schemata)?;
 
                 match inner {
                     serde_json::Value::Object(mut obj) => {
-                        obj.insert(String::from("logicalType"), serde_json::Value::String("logicalType".into()));
-                        Ok(serde_json::Value::Object(obj))
-                    },
-                    _ => { panic!("Expected schema_to_json to return an object"); }
+                        match obj.get("type").and_then(serde_json::Value::as_str) {
+                            Some("ref") => Ok(serde_json::Value::Object(obj)),
+                            _ => {
+                                obj.insert(
+                                    String::from("logical_type"),
+                                    serde_json::Value::String("uuid".into()),
+                                );
+                                Ok(serde_json::Value::Object(obj))
+                            }
+                        }
+                    }
+                    _ => {
+                        panic!("Expected schema_to_json to return an object");
+                    }
                 }
             }
         },
@@ -293,18 +332,31 @@ pub fn schema_to_json(schema: &Schema, schema_info: &SchemaInfo, schemata: &[Sch
             "logical_type": "local-timestamp-nanos",
             "json": schema_json,
         })),
-        Schema::Duration => Ok(json!({
-            "type": "fixed",
-            "logical_type": "duration",
-            "name": "DurationLogicalTYpe",
-            "size": 12,
-            "json": schema_json,
-        })),
-        Schema::Ref{ name} => Ok(json!({
+        Schema::Duration(fixed) => {
+            if fixed.name.fullname(None) != schema_info.full_name {
+                Ok(json!({
+                    "type": "ref",
+                    "name": fixed.name.name,
+                    "namespace": fixed.name.namespace.as_ref().cloned().unwrap_or_else(String::new),
+                    "fullname": fixed.name.fullname(None),
+                }))
+            } else {
+                Ok(json!({
+                    "type": "fixed",
+                    "logical_type": "duration",
+                    "name": fixed.name.name,
+                    "namespace": fixed.name.namespace.as_ref().cloned().unwrap_or_else(String::new),
+                    "fullname": fixed.name.fullname(None),
+                    "size": 12,
+                    "json": schema_json,
+                }))
+            }
+        }
+        Schema::Ref { name } => Ok(json!({
             "type": "ref",
             "name": name.name,
             "namespace": name.namespace.as_ref().cloned().unwrap_or_else(String::new),
             "fullname": name.fullname(None)
-        }))
+        })),
     }
 }

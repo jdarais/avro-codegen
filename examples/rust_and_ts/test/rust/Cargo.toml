@@ -12,3 +12,4 @@ apache-avro = { git = "https://github.com/apache/avro-rs.git" }
 serde_bytes = "0.11.19"
 rust_decimal = "1.39.0"
 bigdecimal = "0.4.9"
+uuid = { version = "1.19.0", features = ["std", "serde", "v4"]}

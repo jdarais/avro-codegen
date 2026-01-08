@@ -1,10 +1,8 @@
 use std::collections::HashMap;
 use std::fs::File;
+use std::io::Read;
 use std::path::Path;
 use std::sync::Arc;
-use std::{
-    io::Read,
-};
 
 use anyhow::anyhow;
 use serde::Deserialize;
@@ -94,6 +92,6 @@ pub fn read_from_toml(project_dir: &Path) -> anyhow::Result<ProjectConfig> {
         include: incl,
         default_generators,
         dependencies,
-        generator_configs
+        generator_configs,
     })
 }

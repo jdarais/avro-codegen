@@ -119,7 +119,10 @@ fn read_generator_toml(params_toml: &str) -> Result<GeneratorToml, anyhow::Error
         params.insert(Arc::from(k.as_str()), param);
     }
 
-    Ok(GeneratorToml{ description: description.into(), params })
+    Ok(GeneratorToml {
+        description: description.into(),
+        params,
+    })
 }
 
 fn read_builtin_generator_archive(archive_data: &[u8]) -> Result<Generator, anyhow::Error> {
@@ -146,7 +149,10 @@ fn read_builtin_generator_archive(archive_data: &[u8]) -> Result<Generator, anyh
         } else if path.as_ref() == "generator.toml" {
             buf.clear();
             entry.read_to_string(&mut buf)?;
-            GeneratorToml{ description, params } = read_generator_toml(&buf)?;
+            GeneratorToml {
+                description,
+                params,
+            } = read_generator_toml(&buf)?;
         } else if path.as_ref() == "generate.lua" {
             buf.clear();
             entry.read_to_string(&mut buf)?;
@@ -204,7 +210,10 @@ fn create_generator_from_path(generator_dir_str: &str) -> Result<Generator, anyh
         let params_toml_content_len = f.metadata()?.len();
         let mut params_toml_content = String::with_capacity(params_toml_content_len as usize);
         f.read_to_string(&mut params_toml_content)?;
-        GeneratorToml{ description, params } = read_generator_toml(&params_toml_content)?
+        GeneratorToml {
+            description,
+            params,
+        } = read_generator_toml(&params_toml_content)?
     };
 
     Ok(Generator {

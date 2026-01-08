@@ -11,7 +11,7 @@ use std::io::Read;
 use std::path::{Path, PathBuf, MAIN_SEPARATOR_STR};
 use std::sync::Arc;
 
-use apache_avro::schema::Schema;
+use apache_avro::schema::{DecimalSchema, InnerDecimalSchema, Schema, UuidSchema};
 use clap::{Parser, Subcommand};
 use mlua::LuaSerdeExt;
 use tera::Context;
@@ -93,6 +93,29 @@ fn collect_schemas(
                         .namespace
                         .as_ref()
                         .map(String::clone)
+                        .unwrap_or_else(String::new),
+                    full_name: fullname,
+                    file_path: schema_info.file_path.clone(),
+                    schema: schema.clone(),
+                },
+            );
+        }
+        Schema::Decimal(DecimalSchema {
+            inner: InnerDecimalSchema::Fixed(fixed),
+            ..
+        })
+        | Schema::Duration(fixed)
+        | Schema::Uuid(UuidSchema::Fixed(fixed)) => {
+            let fullname = fixed.name.fullname(None);
+            schema_collection.insert(
+                fullname.clone(),
+                SchemaInfo {
+                    name: fixed.name.name.clone(),
+                    namespace: fixed
+                        .name
+                        .namespace
+                        .as_ref()
+                        .cloned()
                         .unwrap_or_else(String::new),
                     full_name: fullname,
                     file_path: schema_info.file_path.clone(),
@@ -273,7 +296,9 @@ fn main() {
             let gen_res = get_generator(generator.as_ref());
             let generator_info = match gen_res {
                 Ok(g) => g,
-                Err(e) => { panic!("Error getting generator '{generator}': {e}"); }
+                Err(e) => {
+                    panic!("Error getting generator '{generator}': {e}");
+                }
             };
 
             println!("Generator: {generator}");
@@ -282,7 +307,10 @@ fn main() {
             println!("Params:");
 
             for (name, param) in &generator_info.params {
-                println!("  {}: {} (default={})", name, param.description, param.default);
+                println!(
+                    "  {}: {} (default={})",
+                    name, param.description, param.default
+                );
             }
         }
         Command::Export {

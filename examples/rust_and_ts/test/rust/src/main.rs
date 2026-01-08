@@ -82,7 +82,9 @@ mod tests {
                 (String::from("Jake"), 7)
             ].into_iter().collect::<HashMap<String, i32>>(),
             decimal_value: apache_avro::Decimal::from(&[251, 155]),
-            big_decimal_value: "45.7".parse()?
+            big_decimal_value: "45.7".parse()?,
+            duration_value: rust_and_ts::org::testorg::Duration(apache_avro::Duration::new(apache_avro::Months::new(3), apache_avro::Days::new(7), apache_avro::Millis::new(500))),
+            uuid_value: rust_and_ts::org::testorg::Uuid(uuid::Uuid::new_v4())
         };
 
         let mut buffer: Vec<u8> = Vec::new();
