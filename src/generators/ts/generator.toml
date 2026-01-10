@@ -1,0 +1,3 @@
+description = "Generate rust code that serializes structures using serde and apache_avro packages"
+
+

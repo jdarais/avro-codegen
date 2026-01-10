@@ -287,7 +287,7 @@ fn main() {
                     .unwrap();
 
                 lua.load(generator.generate_script.as_ref())
-                    .set_name("@generate.rs")
+                    .set_name("@generate.lua")
                     .exec()
                     .unwrap();
             }

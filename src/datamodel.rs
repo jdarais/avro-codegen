@@ -152,7 +152,7 @@ pub fn schema_to_json(
                     "name": record_schema.name.name,
                     "aliases": record_schema.aliases,
                     "namespace": record_schema.name.namespace.as_ref().cloned().unwrap_or_else(String::new),
-                    "full_name": schema_info.full_name,
+                    "fullname": schema_info.full_name,
                     "doc": record_schema.doc,
                     "file_path": schema_info.file_path,
                     "fields": fields,

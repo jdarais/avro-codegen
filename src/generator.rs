@@ -230,6 +230,10 @@ pub fn get_generator(generator_name_or_dir: &str) -> Result<Generator, anyhow::E
             let archive_data = include_bytes!(env!("GENERATOR_ARCHIVE_PATH_rust"));
             read_builtin_generator_archive(archive_data)
         }
+        "ts" => {
+            let archive_data = include_bytes!(env!("GENERATOR_ARCHIVE_PATH_ts"));
+            read_builtin_generator_archive(archive_data)
+        }
         _ => create_generator_from_path(generator_name_or_dir),
     }
 }
