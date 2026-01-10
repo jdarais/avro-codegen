@@ -1,3 +1,4 @@
-description = "Generate rust code that serializes structures using serde and apache_avro packages"
+name = "ts"
+description = "Generate typescript code that serializes structures using the avsc library"
 
 

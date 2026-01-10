@@ -20,6 +20,7 @@ pub struct ParamDescription {
 }
 
 pub struct Generator {
+    pub name: Arc<str>,
     pub description: Arc<str>,
     pub tera: Arc<Mutex<Tera>>,
     pub generate_script: Arc<str>,
@@ -27,6 +28,7 @@ pub struct Generator {
 }
 
 struct GeneratorToml {
+    name: Arc<str>,
     description: Arc<str>,
     params: HashMap<Arc<str>, ParamDescription>,
 }
@@ -70,6 +72,13 @@ fn get_template_files_for_generator(
 
 fn read_generator_toml(params_toml: &str) -> Result<GeneratorToml, anyhow::Error> {
     let toml_value: toml::Table = params_toml.parse()?;
+
+    let name_opt: Option<&toml::Value> = toml_value.get("name");
+    let name: String = match name_opt {
+        Some(n) => n.clone().try_into()?,
+        None => { return Err(anyhow!("No name property found in generator.toml")); }
+    };
+
     let description_opt: Option<&toml::Value> = toml_value.get("description");
     let description: String = match description_opt {
         Some(desc) => desc.clone().try_into()?,
@@ -120,12 +129,14 @@ fn read_generator_toml(params_toml: &str) -> Result<GeneratorToml, anyhow::Error
     }
 
     Ok(GeneratorToml {
+        name: name.into(),
         description: description.into(),
         params,
     })
 }
 
 fn read_builtin_generator_archive(archive_data: &[u8]) -> Result<Generator, anyhow::Error> {
+    let mut name: Arc<str> = String::new().into();
     let mut description: Arc<str> = Arc::from("<no description provided");
     let mut templates: HashMap<Arc<str>, Arc<str>> = HashMap::new();
     let mut generate_script: Option<Arc<str>> = None;
@@ -150,6 +161,7 @@ fn read_builtin_generator_archive(archive_data: &[u8]) -> Result<Generator, anyh
             buf.clear();
             entry.read_to_string(&mut buf)?;
             GeneratorToml {
+                name,
                 description,
                 params,
             } = read_generator_toml(&buf)?;
@@ -167,6 +179,7 @@ fn read_builtin_generator_archive(archive_data: &[u8]) -> Result<Generator, anyh
             tera.add_raw_templates(templates)?;
 
             Ok(Generator {
+                name,
                 description,
                 tera: Arc::new(Mutex::new(tera)),
                 generate_script: s,
@@ -204,19 +217,18 @@ fn create_generator_from_path(generator_dir_str: &str) -> Result<Generator, anyh
     let mut generate_script_content = String::with_capacity(files_toml_content_len as usize);
     generate_script_file.read_to_string(&mut generate_script_content)?;
 
-    let mut description: Arc<str> = Arc::from("<no description provided>");
-    let mut params: HashMap<Arc<str>, ParamDescription> = HashMap::new();
-    if let Ok(mut f) = File::open(params_toml_path) {
-        let params_toml_content_len = f.metadata()?.len();
-        let mut params_toml_content = String::with_capacity(params_toml_content_len as usize);
-        f.read_to_string(&mut params_toml_content)?;
-        GeneratorToml {
-            description,
-            params,
-        } = read_generator_toml(&params_toml_content)?
-    };
+    let mut f = File::open(params_toml_path)?;
+
+
+    let params_toml_content_len = f.metadata()?.len();
+    let mut params_toml_content = String::with_capacity(params_toml_content_len as usize);
+    f.read_to_string(&mut params_toml_content)?;
+    let generator_toml = read_generator_toml(&params_toml_content)?;
+    let GeneratorToml { name, description, params } = generator_toml;
+
 
     Ok(Generator {
+        name,
         description,
         tera: Arc::new(Mutex::new(tera)),
         generate_script: generate_script_content.into(),

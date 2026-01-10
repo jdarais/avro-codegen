@@ -229,9 +229,9 @@ fn main() {
             let all_schemas_json = all_schemas_json;
 
             let mut generators: Vec<(Arc<str>, Arc<Generator>)> = Vec::new();
-            for gen_name in cfg.default_generators.iter() {
-                let generator = get_generator(gen_name).unwrap();
-                generators.push((gen_name.clone(), Arc::new(generator)));
+            for gen_name_or_path in cfg.default_generators.iter() {
+                let generator = get_generator(gen_name_or_path).unwrap();
+                generators.push((generator.name.clone(), Arc::new(generator)));
             }
 
             let mut files_toml_context = Context::new();
