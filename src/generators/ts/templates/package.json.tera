@@ -1,21 +1,12 @@
 {
-  "name": "monet_neon",
-  "version": "0.1.0",
-  "description": "NodeJS module wrapper for monet_core",
-  "main": "web/lib/index.js",
-  "author": "Jeremiah Darais <mail@jeremiahdarais.com>",
-  "license": "UNLICENSED",
+  "name": "{{ package.name | kebab_case }}",
+  "version": "{{ package.version }}",
   "scripts": {
-    "build": ""
+    "build": "tsc -p ."
   },
   "dependencies": {
-    "electron-squirrel-startup": "^1.0.0",
-    "events": "^3.1.0",
-    "react": "^16.13.1",
-    "react-dom": "^16.13.1",
-    "react-window": "^1.8.5"
   },
   "devDependencies": {
-    "typescript": "^5.9.3",
+    "typescript": "^5.9.3"
   }
 }

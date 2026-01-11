@@ -1,1 +1,27 @@
+{% import "types.tera" as types -%}
+
+{%- macro rel_path_prefix(namespace) -%}
+{%- if namespace == "" -%}
+    .
+{%- else -%}
+    {% for _ in params.schema.namespace | split(pat=".") %}..{% if not loop.last %}/{% endif %}{% endfor %}
+{%- endif -%}
+{%- endmacro -%}
+
 // Schema for {{ params.schema.name }}
+
+{% for ref in params.refs -%}
+import type { {{ ref.name | title_case }} as {% if ref.namespace != "" %}{{ ref.namespace | replace(from=".", to="_") }}_{% endif %}{{ ref.name | title_case }} } from "{{ self::rel_path_prefix(namespace=params.schema.namespace) }}/{{ ref.namespace | replace(from=".", to="/") }}/{{ ref.name }}.mts"
+{% endfor -%}
+
+{% if params.schema.type == "record" -%}
+export interface {{ params.schema.name | title_case }} {
+{% for field_schema in params.schema.fields -%}
+{#    #}    {{ field_schema.name | camel_case }}: {{ types::render_type(schema=field_schema.type) }},
+{% endfor -%}
+}
+{% elif params.schema.type == "enum" -%}
+export type {{ params.schema.name }} = {% for symbol in params.schema.symbols %}"{{ symbol }}"{% if not loop.last %} | {% endif %}{% endfor %};
+{% elif params.schema.type == "fixed" -%}
+export type {{ params.schema.name }} = Uint8Array;
+{% endif %}

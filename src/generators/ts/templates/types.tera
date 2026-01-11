@@ -1,0 +1,49 @@
+{% macro render_type(schema) -%}
+{%- if schema.logical_type is defined and schema.logical_type == "decimal" -%}
+    number
+{%- elif schema.logical_type is defined and schema.logical_type == "big-decimal" -%}
+    number
+{%- elif schema.logical_type is defined and schema.logical_type == "duration" -%}
+    Buffer
+{%- elif schema.logical_type is defined and schema.logical_type == "uuid" -%}
+    string
+{%- elif schema.logical_type is defined and schema.logical_type == "date" -%}
+    number
+{%- elif schema.logical_type is defined and (schema.logical_type == "time-millis" or schema.logical_type == "time-micros") -%}
+    number
+{%- elif schema.logical_type is defined and (schema.logical_type == "timestamp-millis" or schema.logical_type == "timestamp-micros" or schema.logical_type == "timestamp-nanos") -%}
+    number
+{%- elif schema.logical_type is defined and (schema.logical_type == "local-timestamp-millis" or schema.logical_type == "local-timestamp-micros" or schema.logical_type == "local-timestamp-nanos") -%}
+    number
+{%- elif schema.type is not defined -%}
+    {{ schema }}
+{%- elif schema.type == "null" -%}
+    null
+{%- elif schema.type == "boolean" -%}
+    boolean
+{%- elif schema.type == "int" -%}
+    number
+{%- elif schema.type == "long" -%}
+    number
+{%- elif schema.type == "float" -%}
+    number
+{%- elif schema.type == "double" -%}
+    number
+{%- elif schema.type == "bytes" -%}
+    Uint8Array
+{%- elif schema.type == "string" -%}
+    string
+{%- elif schema.type == "array" -%}
+    Array<{{ self::render_type(schema=schema.items) }}>
+{%- elif schema.type == "map" -%}
+    { [key: string]: {{ self::render_type(schema=schema.values) }} }
+{%- elif schema.type == "union" -%}
+    {%- for variant in schema.variants -%}{ {{ variant.type }}: {{ self::render_type(schema=variant) }} }{%- if not loop.last %} | {% endif -%}{%- endfor -%}
+{%- elif schema.type == "ref" -%}
+    {% if schema.namespace != "" %}{{ schema.namespace | replace(from=".", to="_") }}_{% endif %}{{ schema.name | title_case }}
+{%- elif schema.type == "fixed" -%}
+    Uint8Array
+{%- else -%}
+    unknown /* unknown type: {{ schema.type }} */
+{%- endif -%}
+{% endmacro -%}
