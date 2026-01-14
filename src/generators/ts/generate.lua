@@ -18,12 +18,22 @@ local function find_refs(schema, refs)
     end
 end
 
+schemas_by_namespace = map{}
+for i, schema in ipairs(schemas) do
+    if schemas_by_namespace[schema.namespace] == nil then
+        schemas_by_namespace[schema.namespace] = map {}
+    end
+    schemas_by_namespace[schema.namespace][schema.name] = schema
+end
+
 render("package.json.tera", "package.json")
 render("tsconfig.json.tera", "tsconfig.json")
 
-for i, schema in ipairs(schemas) do
+for namespace, schemas in pairs(schemas_by_namespace) do
     local refs = map()
-    find_refs(schema, refs)
+    for name, schema in pairs(schemas) do
+        find_refs(schema, refs)
+    end
     local refs_keys = refs:keys()
     table.sort(refs_keys)
     local refs_list = array()
@@ -31,6 +41,14 @@ for i, schema in ipairs(schemas) do
         refs_list:push(refs[key])
     end
 
-    local file_path = "src/" .. schema.fullname:gsub("[.]", "/") .. ".mts"
-    render("schema.tera", file_path, map {schema=schema, refs=refs_list})
+    local schema_names = schemas:keys()
+    table.sort(schema_names)
+    local schemas_list = array {}
+    for i, name in ipairs(schema_names) do
+        schemas_list:push(schemas[name])
+    end
+
+    local file_path = "src/" .. namespace:gsub("[.]", "/"):gsub("(.+)$", "%1/") .. "types.mts"
+
+    render("schema.tera", file_path, map {namespace=namespace, schemas=schemas_list, refs=refs_list})
 end

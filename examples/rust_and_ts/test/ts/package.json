@@ -1,0 +1,14 @@
+{
+  "name": "rust-and-ts-test",
+  "version": "0.1.0",
+  "scripts": {
+    "build": "tsc -p ."
+  },
+  "dependencies": {
+    "avsc": "^5.7.9",
+    "rust-and-ts": "../../output/ts"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}

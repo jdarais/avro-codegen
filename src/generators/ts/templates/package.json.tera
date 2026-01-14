@@ -1,10 +1,14 @@
 {
   "name": "{{ package.name | kebab_case }}",
   "version": "{{ package.version }}",
+  "files": [
+    "dist/**/*"
+  ],
   "scripts": {
     "build": "tsc -p ."
   },
   "dependencies": {
+    "avsc": "^5.7.9"
   },
   "devDependencies": {
     "typescript": "^5.9.3"

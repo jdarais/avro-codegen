@@ -1,4 +1,4 @@
-{% macro render_type(schema) -%}
+{% macro render_type(schema, from_namespace) -%}
 {%- if schema.logical_type is defined and schema.logical_type == "decimal" -%}
     number
 {%- elif schema.logical_type is defined and schema.logical_type == "big-decimal" -%}
@@ -34,13 +34,13 @@
 {%- elif schema.type == "string" -%}
     string
 {%- elif schema.type == "array" -%}
-    Array<{{ self::render_type(schema=schema.items) }}>
+    Array<{{ self::render_type(schema=schema.items, from_namespace=from_namespace) }}>
 {%- elif schema.type == "map" -%}
-    { [key: string]: {{ self::render_type(schema=schema.values) }} }
+    { [key: string]: {{ self::render_type(schema=schema.values, from_namespace=from_namespace) }} }
 {%- elif schema.type == "union" -%}
-    {%- for variant in schema.variants -%}{ {{ variant.type }}: {{ self::render_type(schema=variant) }} }{%- if not loop.last %} | {% endif -%}{%- endfor -%}
+    {%- for variant in schema.variants -%}{ {{ variant.type }}: {{ self::render_type(schema=variant, from_namespace=from_namespace) }} }{%- if not loop.last %} | {% endif -%}{%- endfor -%}
 {%- elif schema.type == "ref" -%}
-    {% if schema.namespace != "" %}{{ schema.namespace | replace(from=".", to="_") }}_{% endif %}{{ schema.name | title_case }}
+    {% if schema.namespace != "" and schema.namespace != from_namespace %}{{ schema.namespace | replace(from=".", to="_") }}_{% endif %}{{ schema.name | title_case }}
 {%- elif schema.type == "fixed" -%}
     Uint8Array
 {%- else -%}

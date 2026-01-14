@@ -1,27 +1,36 @@
 {% import "types.tera" as types -%}
 
-{%- macro rel_path_prefix(namespace) -%}
+import avro from "avsc";
+
+{% macro rel_path_prefix(namespace) -%}
 {%- if namespace == "" -%}
     .
 {%- else -%}
-    {% for _ in params.schema.namespace | split(pat=".") %}..{% if not loop.last %}/{% endif %}{% endfor %}
+    {% for _ in namespace | split(pat=".") %}..{% if not loop.last %}/{% endif %}{% endfor %}
 {%- endif -%}
-{%- endmacro -%}
-
-// Schema for {{ params.schema.name }}
+{% endmacro -%}
 
 {% for ref in params.refs -%}
-import type { {{ ref.name | title_case }} as {% if ref.namespace != "" %}{{ ref.namespace | replace(from=".", to="_") }}_{% endif %}{{ ref.name | title_case }} } from "{{ self::rel_path_prefix(namespace=params.schema.namespace) }}/{{ ref.namespace | replace(from=".", to="/") }}/{{ ref.name }}.mts"
+{% if ref.namespace != params.namespace -%}
+import type { {{ ref.name | title_case }} as {% if ref.namespace != "" %}{{ ref.namespace | replace(from=".", to="_") }}_{% endif %}{{ ref.name | title_case }} } {# -#}
+from "{{ self::rel_path_prefix(namespace=params.namespace) }}/{{ ref.namespace | replace(from=".", to="/") }}{% if ref.namespace | length > 0 %}/{% endif %}types.mts"
+{% endif -%}
 {% endfor -%}
 
-{% if params.schema.type == "record" -%}
-export interface {{ params.schema.name | title_case }} {
-{% for field_schema in params.schema.fields -%}
-{#    #}    {{ field_schema.name | camel_case }}: {{ types::render_type(schema=field_schema.type) }},
+{% for schema in params.schemas -%}
+// Schema for {{ schema.name }}
+
+{% if schema.type == "record" -%}
+export interface {{ schema.name | title_case }} {
+{% for field_schema in schema.fields -%}
+{#    #}    {{ field_schema.name }}: {{ types::render_type(schema=field_schema.type, from_namespace=params.namespace) }},
 {% endfor -%}
 }
-{% elif params.schema.type == "enum" -%}
-export type {{ params.schema.name }} = {% for symbol in params.schema.symbols %}"{{ symbol }}"{% if not loop.last %} | {% endif %}{% endfor %};
-{% elif params.schema.type == "fixed" -%}
-export type {{ params.schema.name }} = Uint8Array;
+{% elif schema.type == "enum" -%}
+export type {{ schema.name }} = {% for symbol in schema.symbols %}"{{ symbol }}"{% if not loop.last %} | {% endif %}{% endfor %};
+{% elif schema.type == "fixed" -%}
+export type {{ schema.name }} = Uint8Array;
 {% endif %}
+
+export const {{ schema.name | title_case }}Type = avro.Type.forSchema({{ schema.json }});
+{% endfor -%}
