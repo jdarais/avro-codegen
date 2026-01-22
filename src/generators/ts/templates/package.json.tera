@@ -4,6 +4,24 @@
   "files": [
     "dist/**/*"
   ],
+  "exports": {
+{% for namespace in params.namespaces -%}
+{% if namespace | length == 0 -%}
+  {# #}    ".": "./dist/node/types.mjs"{% if not loop.last %},{% endif %}
+{% else -%}
+  {# #}    "./{{ namespace | replace(from=".", to="/") }}": "./dist/node/{{ namespace | replace(from=".", to="/")}}/types.mjs"{% if not loop.last %},{% endif %}
+{% endif -%}
+{% endfor -%}
+  },
+  "browser": {
+{% for namespace in params.namespaces -%}
+{% if namespace | length == 0 -%}
+  {# #}    ".": "./dist/browser/types.mjs"{% if not loop.last %},{% endif %}
+{% else -%}
+  {# #}    "./{{ namespace | replace(from=".", to="/") }}": "./dist/browser/{{ namespace | replace(from=".", to="/")}}/types.mjs"{% if not loop.last %},{% endif %}
+{% endif -%}
+{% endfor -%}
+  },
   "scripts": {
     "build": "tsc -p ."
   },
@@ -11,6 +29,7 @@
     "avsc": "^5.7.9"
   },
   "devDependencies": {
+    "@types/node": "^25.0.10",
     "typescript": "^5.9.3"
   }
 }

@@ -1,8 +1,8 @@
-{% macro render_type(schema, from_namespace) -%}
+{% macro render_type(schema, from_namespace, is_node) -%}
 {%- if schema.logical_type is defined and schema.logical_type == "decimal" -%}
-    number
+    {%- if is_node -%}Buffer{%- else -%}Uint8Array{%- endif -%}
 {%- elif schema.logical_type is defined and schema.logical_type == "big-decimal" -%}
-    number
+    {%- if is_node -%}Buffer{%- else -%}Uint8Array{%- endif -%}
 {%- elif schema.logical_type is defined and schema.logical_type == "duration" -%}
     Buffer
 {%- elif schema.logical_type is defined and schema.logical_type == "uuid" -%}
@@ -30,19 +30,26 @@
 {%- elif schema.type == "double" -%}
     number
 {%- elif schema.type == "bytes" -%}
-    Uint8Array
+    {%- if is_node -%}Buffer{%- else -%}Uint8Array{%- endif -%}
 {%- elif schema.type == "string" -%}
     string
 {%- elif schema.type == "array" -%}
-    Array<{{ self::render_type(schema=schema.items, from_namespace=from_namespace) }}>
+    Array<{{ self::render_type(schema=schema.items, from_namespace=from_namespace, is_node=is_node) }}>
 {%- elif schema.type == "map" -%}
-    { [key: string]: {{ self::render_type(schema=schema.values, from_namespace=from_namespace) }} }
+    { [key: string]: {{ self::render_type(schema=schema.values, from_namespace=from_namespace, is_node=is_node) }} }
 {%- elif schema.type == "union" -%}
-    {%- for variant in schema.variants -%}{ {{ variant.type }}: {{ self::render_type(schema=variant, from_namespace=from_namespace) }} }{%- if not loop.last %} | {% endif -%}{%- endfor -%}
+    {%- for variant in schema.variants -%}
+        {%- if variant.type == "null" -%}
+            null
+        {%- else -%}
+            { {{ variant.type }}: {{ self::render_type(schema=variant, from_namespace=from_namespace, is_node=is_node) }} }
+        {%- endif -%}
+        {%- if not loop.last %} | {% endif -%}
+    {%- endfor -%}
 {%- elif schema.type == "ref" -%}
     {% if schema.namespace != "" and schema.namespace != from_namespace %}{{ schema.namespace | replace(from=".", to="_") }}_{% endif %}{{ schema.name | title_case }}
 {%- elif schema.type == "fixed" -%}
-    Uint8Array
+    {%- if is_node -%}Buffer{%- else -%}Uint8Array{%- endif -%}
 {%- else -%}
     unknown /* unknown type: {{ schema.type }} */
 {%- endif -%}

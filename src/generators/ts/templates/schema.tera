@@ -23,7 +23,7 @@ from "{{ self::rel_path_prefix(namespace=params.namespace) }}/{{ ref.namespace |
 {% if schema.type == "record" -%}
 export interface {{ schema.name | title_case }} {
 {% for field_schema in schema.fields -%}
-{#    #}    {{ field_schema.name }}: {{ types::render_type(schema=field_schema.type, from_namespace=params.namespace) }},
+{#    #}    {{ field_schema.name }}: {{ types::render_type(schema=field_schema.type, from_namespace=params.namespace, is_node=params.is_node) }},
 {% endfor -%}
 }
 {% elif schema.type == "enum" -%}
@@ -32,5 +32,5 @@ export type {{ schema.name }} = {% for symbol in schema.symbols %}"{{ symbol }}"
 export type {{ schema.name }} = Uint8Array;
 {% endif %}
 
-export const {{ schema.name | title_case }}Type = avro.Type.forSchema({{ schema.json }});
+export const {{ schema.name | const_case }}_SCHEMA = avro.Type.forSchema({{ schema.json }});
 {% endfor -%}

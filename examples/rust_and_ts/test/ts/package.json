@@ -2,13 +2,18 @@
   "name": "rust-and-ts-test",
   "version": "0.1.0",
   "scripts": {
-    "build": "tsc -p ."
+    "build": "tsc -p .",
+    "test": "ts-node node_modules/jasmine/bin/jasmine"
   },
   "dependencies": {
     "avsc": "^5.7.9",
     "rust-and-ts": "../../output/ts"
   },
   "devDependencies": {
+    "@types/jasmine": "^6.0.0",
+    "@types/node": "^25.0.10",
+    "jasmine": "^6.0.0",
+    "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
   }
 }

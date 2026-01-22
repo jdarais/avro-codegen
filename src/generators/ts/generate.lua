@@ -26,7 +26,10 @@ for i, schema in ipairs(schemas) do
     schemas_by_namespace[schema.namespace][schema.name] = schema
 end
 
-render("package.json.tera", "package.json")
+local namespaces = schemas_by_namespace:keys()
+table.sort(namespaces)
+
+render("package.json.tera", "package.json", {namespaces=namespaces})
 render("tsconfig.json.tera", "tsconfig.json")
 
 for namespace, schemas in pairs(schemas_by_namespace) do
@@ -48,7 +51,8 @@ for namespace, schemas in pairs(schemas_by_namespace) do
         schemas_list:push(schemas[name])
     end
 
-    local file_path = "src/" .. namespace:gsub("[.]", "/"):gsub("(.+)$", "%1/") .. "types.mts"
+    local file_path = namespace:gsub("[.]", "/"):gsub("(.+)$", "%1/") .. "types.mts"
 
-    render("schema.tera", file_path, map {namespace=namespace, schemas=schemas_list, refs=refs_list})
+    render("schema.tera", "src/node/" .. file_path, map {namespace=namespace, schemas=schemas_list, refs=refs_list, is_node=true})
+    render("schema.tera", "src/browser/" .. file_path, map {namespace=namespace, schemas=schemas_list, refs=refs_list, is_node=false})
 end
