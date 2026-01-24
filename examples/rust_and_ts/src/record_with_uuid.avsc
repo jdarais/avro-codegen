@@ -1,0 +1,9 @@
+{
+    "type": "record",
+    "name": "RecordWithUuid",
+    "namespace": "org.testorg.test",
+    "fields": [
+        { "name": "stringUuid", "type": { "type": "string", "logicalType": "uuid" }},
+        { "name": "fixedUuid", "type": { "type": "fixed", "name": "FixedUuid", "size": 16, "logicalType": "uuid"}}
+    ]
+}

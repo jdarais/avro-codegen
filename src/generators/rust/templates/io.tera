@@ -1,0 +1,105 @@
+use std::io::Read;
+use std::marker::PhantomData;
+
+use apache_avro::{AvroResult, Schema};
+use apache_avro::Reader;
+use serde::de;
+
+pub trait AvroSchemaRef<'a> {
+    fn get_schema_ref() -> &'a Schema;
+}
+
+pub struct TypedReader<'a, R: Read, T: de::DeserializeOwned> {
+    reader: Reader<'a, R>,
+    read_type: PhantomData<T>,
+}
+
+impl <'a, R: Read, T: de::DeserializeOwned> TypedReader<'a, R, T> {
+    pub fn new(schema: &'a Schema, input: R) -> AvroResult<TypedReader<'a, R, T>> {
+        Ok(TypedReader {
+            reader: Reader::with_schema(schema, input)?,
+            read_type: PhantomData
+        })
+    }
+
+    pub fn reader(&self) -> &Reader<'a, R> {
+        &self.reader
+    }
+}
+
+impl <'a, R: Read, T: de::DeserializeOwned + AvroSchemaRef<'a>> TypedReader<'a, R, T> {
+    pub fn from_type(input: R) -> AvroResult<TypedReader<'a, R, T>> {
+        Ok(TypedReader {
+            reader: Reader::with_schema(T::get_schema_ref(), input)?,
+            read_type: PhantomData
+        })
+    }
+}
+
+impl <'a, R: Read, T: de::DeserializeOwned> Iterator for TypedReader<'a, R, T> {
+    type Item = AvroResult<T>;
+
+    fn next(&mut self) -> Option<AvroResult<T>> {
+        let val_res_opt = self.reader.next();
+
+        match val_res_opt {
+            Some(val_res) => Some(val_res.and_then(|val| apache_avro::from_value(&val))),
+            None => None
+        }
+    }
+}
+
+pub mod duration_serde {
+    use serde::de::Error as _;
+
+    pub fn serialize<S>(value: &apache_avro::Duration, serializer: S) -> Result<S::Ok, S::Error> where S: serde::Serializer {
+        let value_bytes: [u8;12] = value.clone().into();
+        serializer.serialize_bytes(&value_bytes)
+    }
+
+    struct DurationVisitor;
+
+    impl <'de> serde::de::Visitor<'de> for DurationVisitor {
+        type Value = apache_avro::Duration;
+
+        fn expecting(&self, f: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
+            write!(f, "a byte array with size 12")
+        }
+
+        fn visit_bytes<E>(self, v: &[u8]) -> Result<Self::Value, E> where E: serde::de::Error {
+            if v.len() != 12 {
+                Err(E::custom(format!("Expected byte array of length 12, but length is {}", v.len())))
+            } else {
+                let v_slice: [u8;12] = v[..12].try_into().unwrap();
+                Ok(apache_avro::Duration::from(v_slice))
+            }
+        }
+
+        fn visit_map<A>(self, mut a: A) -> Result<Self::Value, A::Error> where A: serde::de::MapAccess<'de> {
+            let mut months = 0u32;
+            let mut days = 0u32;
+            let mut millis = 0u32;
+
+            while let Some((k, v)) = a.next_entry::<&'de str, [u8;4]>()? {
+                match k {
+                    "months" => { months = u32::from_le_bytes(v); },
+                    "days" => { days = u32::from_le_bytes(v); },
+                    "millis" => { millis = u32::from_le_bytes(v); },
+                    _ => { return Err(A::Error::unknown_field(k, &["months", "days", "millis"])); }
+                }
+            }
+
+            Ok(
+                apache_avro::Duration::new(
+                    apache_avro::Months::new(months),
+                    apache_avro::Days::new(days),
+                    apache_avro::Millis::new(millis),
+                )
+            )
+        }
+    }
+
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<apache_avro::Duration, D::Error> where D: serde::Deserializer<'de> {
+        deserializer.deserialize_bytes(DurationVisitor)
+    }
+}

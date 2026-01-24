@@ -149,6 +149,35 @@ fn collect_schemas(
                 collect_schemas(&mut *schema_collection, &field.schema, schema_info);
             }
         }
+        Schema::Decimal(sch) => match &sch.inner {
+            InnerDecimalSchema::Fixed(fixed_sch) => {
+                let fullname = fixed_sch.name.fullname(None);
+                schema_collection.insert(
+                    fullname.clone(),
+                    SchemaInfo {
+                        name: fixed_sch.name.name.clone(),
+                        namespace: fixed_sch.name.namespace.as_ref().map(String::clone).unwrap_or_else(String::new),
+                        full_name: fullname,
+                        file_path: schema_info.file_path.clone(),
+                        schema: schema.clone()
+                    }
+                );
+            }
+            _ => { /* Nothing to do */ }
+        }
+        Schema::Uuid(UuidSchema::Fixed(sch)) => {
+            let fullname = sch.name.fullname(None);
+            schema_collection.insert(
+                fullname.clone(),
+                SchemaInfo {
+                    name: sch.name.name.clone(),
+                    namespace: sch.name.namespace.as_ref().map(String::clone).unwrap_or_else(String::new),
+                    full_name: fullname,
+                    file_path: schema_info.file_path.clone(),
+                    schema: schema.clone()
+                }
+            );
+        }
         _ => { /* Nothing to do */ }
     }
 }

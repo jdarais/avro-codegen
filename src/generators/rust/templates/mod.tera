@@ -14,9 +14,9 @@ pub mod {{ mod }};
 {% endfor -%}
 
 {% macro render_record_field(name, schema) -%}
-{% if schema.logical_type is defined -%}
-
-{% elif schema.type == "bytes" or schema.type == "fixed" -%}
+{% if schema.logical_type is defined and schema.logical_type == "duration" -%}
+{# #}    #[serde(with="crate::_io::duration_serde")]
+{% elif schema.logical_type is not defined and schema.type == "bytes" or schema.type == "fixed" -%}
 {# #}    #[serde(with="serde_bytes")]
 {% endif -%}
 {% if name != name | snake_case -%}
@@ -62,7 +62,7 @@ impl AvroSchema for {{ schema.name | title_case }} {
     }
 }
 
-impl <'a> crate::_rw::AvroSchemaRef<'a> for {{ schema.name | title_case }} {
+impl <'a> crate::_io::AvroSchemaRef<'a> for {{ schema.name | title_case }} {
     fn get_schema_ref() -> &'a Schema {
         &{{ schema.name | const_case }}_SCHEMA
     }
@@ -71,8 +71,8 @@ impl <'a> crate::_rw::AvroSchemaRef<'a> for {{ schema.name | title_case }} {
 impl {{ schema.name | title_case }} {
     pub fn schema() -> &'static Schema { &{{ schema.name | const_case }}_SCHEMA }
 
-    pub fn reader<R: Read>(input: R) -> AvroResult<crate::_rw::TypedReader<'static, R, {{ schema.name | title_case }}>> {
-        crate::_rw::TypedReader::<R, {{ schema.name | title_case }}>::from_type(input)
+    pub fn reader<R: Read>(input: R) -> AvroResult<crate::_io::TypedReader<'static, R, {{ schema.name | title_case }}>> {
+        crate::_io::TypedReader::<R, {{ schema.name | title_case }}>::from_type(input)
     }
 
     pub fn writer<W: Write>(output: W) -> AvroResult<apache_avro::Writer<'static, W>> {
