@@ -11,8 +11,10 @@
     number
 {%- elif schema.logical_type is defined and (schema.logical_type == "time-millis" or schema.logical_type == "time-micros") -%}
     number
-{%- elif schema.logical_type is defined and (schema.logical_type == "timestamp-millis" or schema.logical_type == "timestamp-micros" or schema.logical_type == "timestamp-nanos") -%}
+{%- elif schema.logical_type is defined and (schema.logical_type == "timestamp-micros" or schema.logical_type == "timestamp-nanos") -%}
     number
+{%- elif schema.logical_type is defined and (schema.logical_type == "timestamp-millis") -%}
+    Date
 {%- elif schema.logical_type is defined and (schema.logical_type == "local-timestamp-millis" or schema.logical_type == "local-timestamp-micros" or schema.logical_type == "local-timestamp-nanos") -%}
     number
 {%- elif schema.type is not defined -%}

@@ -7,20 +7,22 @@
   "exports": {
 {% for namespace in params.namespaces -%}
 {% if namespace | length == 0 -%}
-  {# #}    ".": "./dist/node/types.mjs"{% if not loop.last %},{% endif %}
+  {# #}    ".": "./dist/node/types.mjs",
 {% else -%}
-  {# #}    "./{{ namespace | replace(from=".", to="/") }}": "./dist/node/{{ namespace | replace(from=".", to="/")}}/types.mjs"{% if not loop.last %},{% endif %}
+  {# #}    "./{{ namespace | replace(from=".", to="/") }}": "./dist/node/{{ namespace | replace(from=".", to="/")}}/types.mjs",
 {% endif -%}
 {% endfor -%}
+{# #}    "./_rw": "./dist/node/_rw.mjs"
   },
   "browser": {
 {% for namespace in params.namespaces -%}
 {% if namespace | length == 0 -%}
-  {# #}    ".": "./dist/browser/types.mjs"{% if not loop.last %},{% endif %}
+  {# #}    ".": "./dist/browser/types.mjs",
 {% else -%}
-  {# #}    "./{{ namespace | replace(from=".", to="/") }}": "./dist/browser/{{ namespace | replace(from=".", to="/")}}/types.mjs"{% if not loop.last %},{% endif %}
+  {# #}    "./{{ namespace | replace(from=".", to="/") }}": "./dist/browser/{{ namespace | replace(from=".", to="/")}}/types.mjs",
 {% endif -%}
 {% endfor -%}
+{# #}    "./_rw": "./dist/browser/_rw.mjs"
   },
   "scripts": {
     "build": "tsc -p ."
