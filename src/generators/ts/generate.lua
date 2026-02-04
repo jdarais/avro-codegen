@@ -32,8 +32,8 @@ table.sort(namespaces)
 render("package.json.tera", "package.json", {namespaces=namespaces})
 render("tsconfig.json.tera", "tsconfig.json")
 
-render("rw.tera", "src/node/_rw.mts")
-render("rw.tera", "src/browser/_rw.mts")
+render("io.tera", "src/node/_io.mts")
+render("io.tera", "src/browser/_io.mts")
 
 for namespace, schemas in pairs(schemas_by_namespace) do
     local refs = map()

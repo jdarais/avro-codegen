@@ -165,19 +165,6 @@ fn collect_schemas(
             }
             _ => { /* Nothing to do */ }
         }
-        Schema::Uuid(UuidSchema::Fixed(sch)) => {
-            let fullname = sch.name.fullname(None);
-            schema_collection.insert(
-                fullname.clone(),
-                SchemaInfo {
-                    name: sch.name.name.clone(),
-                    namespace: sch.name.namespace.as_ref().map(String::clone).unwrap_or_else(String::new),
-                    full_name: fullname,
-                    file_path: schema_info.file_path.clone(),
-                    schema: schema.clone()
-                }
-            );
-        }
         _ => { /* Nothing to do */ }
     }
 }

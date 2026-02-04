@@ -1,0 +1,40 @@
+import avro from "avsc";
+
+const ONE_DAY_IN_MILLIS = 1000 * 60 * 60 * 24;
+
+export class DateType extends avro.types.LogicalType {
+    _fromValue(val: number): Date {
+        return new Date(val * ONE_DAY_IN_MILLIS);
+    }
+    _toValue(date: Date): number {
+        return Math.floor(date.valueOf() / ONE_DAY_IN_MILLIS);
+    }
+    _resolve(type: avro.Type): ((v: number) => Date) | undefined {
+        if (avro.Type.isType(type, "int", "logical:days")) {
+            return this._fromValue;
+        } else {
+            return undefined;
+        }
+    }
+}
+
+export class TimestampMillisType extends avro.types.LogicalType {
+    _fromValue(val: number | string): Date {
+        return new Date(val);
+    }
+    _toValue(date: Date): number {
+        return date.valueOf();
+    }
+    _resolve(type: avro.Type): ((v: number | string) => Date) | undefined {
+        if (avro.Type.isType(type, "int", "long", "string", "logical:timestamp-millis")) {
+            return this._fromValue;
+        } else {
+            return undefined;
+        }
+    }
+}
+
+export const _logicalTypes = {
+    "date": DateType,
+    "timestamp-millis": TimestampMillisType
+}

@@ -8,7 +8,7 @@
 {%- elif schema.logical_type is defined and schema.logical_type == "uuid" -%}
     string
 {%- elif schema.logical_type is defined and schema.logical_type == "date" -%}
-    number
+    Date
 {%- elif schema.logical_type is defined and (schema.logical_type == "time-millis" or schema.logical_type == "time-micros") -%}
     number
 {%- elif schema.logical_type is defined and (schema.logical_type == "timestamp-micros" or schema.logical_type == "timestamp-nanos") -%}

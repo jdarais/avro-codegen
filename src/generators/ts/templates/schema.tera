@@ -1,7 +1,7 @@
 {% import "types.tera" as types -%}
 
 import avro from "avsc";
-import { _logicalTypes } from "{{ self::rel_path_prefix(namespace=params.namespace) }}/_rw.mjs";
+import { _logicalTypes } from "{{ self::rel_path_prefix(namespace=params.namespace) }}/_io.mjs";
 
 {% macro rel_path_prefix(namespace) -%}
 {%- if namespace == "" -%}
