@@ -24,9 +24,6 @@
 {% endfor -%}
 {# #}    "./_rw": "./dist/browser/_rw.mjs"
   },
-  "scripts": {
-    "build": "tsc -p ."
-  },
   "dependencies": {
     "avsc": "^5.7.9"
   },

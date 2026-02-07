@@ -1,0 +1,20 @@
+{% import "types.tera" as types -%}
+
+import avro from "avsc";
+
+{% macro rel_path_prefix(namespace) -%}
+{%- if namespace == "" -%}
+    .
+{%- else -%}
+    {% for _ in namespace | split(pat=".") %}..{% if not loop.last %}/{% endif %}{% endfor %}
+{%- endif -%}
+{% endmacro -%}
+
+import { _logicalTypes } from "{{ self::rel_path_prefix(namespace=params.namespace) }}/_io.mjs";
+
+{% for schema in params.schemas -%}
+export const {{ schema.name | const_case }}_SCHEMA = avro.Type.forSchema(
+    {{ schema.json }},
+    { logicalTypes: _logicalTypes }
+);
+{% endfor -%}
