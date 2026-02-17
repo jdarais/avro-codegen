@@ -18,8 +18,8 @@ describe("Record with types", () => {
             ages: {"Paul": 27, "Susan": 29},
             decimalValue: Buffer.from([1, 2, 3]),
             bigDecimalValue: Buffer.from([1, 2, 3]),
-            durationValue: Buffer.from([0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1]),
-            uuidValue: Buffer.from([234, 195, 1, 7, 94, 48, 29, 3, 85, 61, 42, 44, 32, 99, 108, 33])
+            durationValue: { months: 3, days: 7, millis: 1000 },
+            uuidValue: "6ec0bd7f-11c0-43da-975e-2a8ad9ebae0b"
         };
 
         const serialized = RECORD_WITH_TYPES_SCHEMA.toBuffer(record);

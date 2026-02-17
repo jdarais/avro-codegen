@@ -31,11 +31,11 @@ table.sort(namespaces)
 
 render("package.json.tera", "package.json", {namespaces=namespaces})
 
-render("io.mjs.tera", "dist/node/_io.mjs")
-render("io.mjs.tera", "dist/browser/_io.mjs")
+render("io.mjs.tera", "dist/node/_io.mjs", {is_node=true})
+render("io.mjs.tera", "dist/browser/_io.mjs", {is_node=false})
 
-render("io.d.mts.tera", "dist/node/_io.d.mts")
-render("io.d.mts.tera", "dist/browser/_io.d.mts")
+render("io.d.mts.tera", "dist/node/_io.d.mts", {is_node=true})
+render("io.d.mts.tera", "dist/browser/_io.d.mts", {is_node=false})
 
 for namespace, schemas in pairs(schemas_by_namespace) do
     local refs = map()

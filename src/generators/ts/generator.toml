@@ -1,4 +1,3 @@
 name = "ts"
 description = "Generate typescript code that serializes structures using the avsc library"
 
-

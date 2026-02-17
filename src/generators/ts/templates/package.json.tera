@@ -25,7 +25,8 @@
 {# #}    "./_rw": "./dist/browser/_rw.mjs"
   },
   "dependencies": {
-    "avsc": "^5.7.9"
+    "avsc": "^5.7.9",
+    "uuid": "^13.0.0"
   },
   "devDependencies": {
     "@types/node": "^25.0.10",

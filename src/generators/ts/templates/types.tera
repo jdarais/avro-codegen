@@ -4,7 +4,7 @@
 {%- elif schema.logical_type is defined and schema.logical_type == "big-decimal" -%}
     {%- if is_node -%}Buffer{%- else -%}Uint8Array{%- endif -%}
 {%- elif schema.logical_type is defined and schema.logical_type == "duration" -%}
-    Buffer
+    { months: number, days: number, millis: number }
 {%- elif schema.logical_type is defined and schema.logical_type == "uuid" -%}
     string
 {%- elif schema.logical_type is defined and schema.logical_type == "date" -%}

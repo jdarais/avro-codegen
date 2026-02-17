@@ -28,8 +28,8 @@ export interface {{ schema.name | title_case }} {
 }
 {% elif schema.type == "enum" -%}
 export type {{ schema.name }} = {% for symbol in schema.symbols %}"{{ symbol }}"{% if not loop.last %} | {% endif %}{% endfor %};
-{% elif schema.type == "fixed" -%}
-export type {{ schema.name }} = Uint8Array;
+{% else -%}
+export type {{ schema.name }} = {{ types::render_type(schema=schema, from_namespace=params.namespace, is_node=params.is_node) }};
 {% endif %}
 
 export const {{ schema.name | const_case }}_SCHEMA: avro.Type;

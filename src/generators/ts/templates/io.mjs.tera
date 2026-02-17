@@ -1,4 +1,9 @@
 import avro from "avsc";
+import { parse as parseUuid, stringify as stringifyUuid } from "uuid";
+
+{% if params.is_node -%}
+import { Buffer } from "node:buffer";
+{% endif -%}
 
 const ONE_DAY_IN_MILLIS = 1000 * 60 * 60 * 24;
 
@@ -34,7 +39,80 @@ export class TimestampMillisType extends avro.types.LogicalType {
     }
 }
 
+export class DurationType extends avro.types.LogicalType {
+    _fromValue(val) {
+{%- if params.is_node %}
+        const months = val.readUInt32LE(0);
+        const days = val.readUInt32LE(4);
+        const millis = val.readUInt32LE(8);
+{%- else %}
+        const dataView = new DataView(val.buffer);
+        const months = dataView.getUint32(0, true);
+        const days = dataView.getUint32(4, true);
+        const millis = dataView.getUint32(8, true);
+{%- endif %}
+
+        return { months: months, days: days, millis: millis };
+    }
+
+    _toValue(val) {
+        let buf = new ArrayBuffer(12);
+        let dataView = new DataView(buf);
+        dataView.setUint32(0, val.months, true);
+        dataView.setUint32(4, val.days, true);
+        dataView.setUint32(8, val.millis, true);
+{% if params.is_node %}
+        return Buffer.from(buf);
+{%- else %}
+        return new Uint8Array(buf);
+{%- endif %}
+    }
+
+    _resolve(type) {
+        if (avro.type.isType(type, "logical:duration")) {
+            return this._fromValue;
+        } else {
+            return undefined;
+        }
+    }
+}
+
+export class UuidType extends avro.types.LogicalType {
+    _fromValue(val) {
+        if (this.underlyingType == "string") {
+            return val;
+        } else {
+            return stringifyUuid(val);
+        }
+    }
+
+    _toValue(val) {
+        if (this.underlyingType == "string") {
+            return val;
+        } else {
+            const arr = parseUuid(val);
+{% if params.is_node %}
+            return Buffer.from(arr.buffer);
+{%- else %}
+            return arr;
+{%- endif %}
+        }
+    }
+
+    _resolve(type) {
+        if (avro.type.isType(type, "logical:uuid")) {
+            return this._fromValue;
+        } else {
+            return undefined;
+        }
+    }
+}
+
 export const _logicalTypes = {
     "date": DateType,
-    "timestamp-millis": TimestampMillisType
+    "timestamp-millis": TimestampMillisType,
+    "duration": DurationType,
+    "uuid": UuidType,
 }
+
+
