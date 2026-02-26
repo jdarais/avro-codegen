@@ -4,7 +4,7 @@ mod generator;
 mod lua_env;
 mod tera_env;
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap};
 use std::env::set_current_dir;
 use std::fs::{remove_dir_all, File};
 use std::io::Read;
@@ -14,10 +14,10 @@ use std::sync::Arc;
 use apache_avro::schema::{DecimalSchema, InnerDecimalSchema, Schema, UuidSchema};
 use clap::{Parser, Subcommand};
 use mlua::LuaSerdeExt;
-use tera::Context;
 
+use crate::config::GeneratorConfig;
 use crate::datamodel::{schema_to_json, PackageInfo, SchemaInfo};
-use crate::generator::{get_generator, Generator};
+use crate::generator::{Generator, INTERNAL_GENERATOR_NAMES, get_generator};
 use crate::lua_env::{create_lua_env, GeneratorContext};
 
 #[derive(Parser)]
@@ -35,15 +35,26 @@ enum Command {
         output: Arc<str>,
 
         /// Schema project directory to process
-        #[arg(default_value = ".")]
+        #[arg(short, long, default_value = ".")]
         project_dir: Arc<str>,
     },
 
     /// Display information about a code generator
     Show {
-        /// Generator name or directory
+        /// Generator name
         #[arg()]
         generator: Arc<str>,
+
+        /// Schema project directory.  If the specified directory is not a schema project, internal generators can still be shown
+        #[arg(short, long, default_value = ".")]
+        project_dir: Arc<str>,
+    },
+
+    /// List available generators
+    List {
+        /// Schema project directory.  If the specified directory is not a schema project, internal generators will be listed
+        #[arg(short, long, default_value = ".")]
+        project_dir: Arc<str>,
     },
 
     /// Export a generator configuration (built-in or external)
@@ -55,6 +66,10 @@ enum Command {
         /// Generator name or directory to export
         #[arg()]
         generator: Arc<str>,
+
+        /// Schema project directory.  If the specified directory is not a schema project, internal generators can still be exported
+        #[arg(short, long, default_value = ".")]
+        project_dir: Arc<str>,
     },
 }
 
@@ -245,13 +260,10 @@ fn main() {
             let all_schemas_json = all_schemas_json;
 
             let mut generators: Vec<(Arc<str>, Arc<Generator>)> = Vec::new();
-            for gen_name_or_path in cfg.default_generators.iter() {
-                let generator = get_generator(gen_name_or_path).unwrap();
-                generators.push((generator.name.clone(), Arc::new(generator)));
+            for gen_name in cfg.default_generators.iter() {
+                let generator = get_generator(gen_name, &cfg.generator_configs).unwrap();
+                generators.push((gen_name.clone(), Arc::new(generator)));
             }
-
-            let mut files_toml_context = Context::new();
-            files_toml_context.insert("schemas", &schema_infos);
 
             let package_info = PackageInfo {
                 name: String::from(cfg.name.as_ref()),
@@ -281,7 +293,7 @@ fn main() {
                 let lua = create_lua_env(GeneratorContext::new(
                     generator_output_dir,
                     generator.clone(),
-                    schema_infos.clone(),
+                    all_schemas_json.clone(),
                     package_info.clone(),
                     params,
                 ))
@@ -308,8 +320,21 @@ fn main() {
                     .unwrap();
             }
         }
-        Command::Show { generator } => {
-            let gen_res = get_generator(generator.as_ref());
+        Command::Show { generator, project_dir } => {
+            let canonical_project_dir = Path::new(project_dir.as_ref()).canonicalize().unwrap();
+            set_current_dir(&canonical_project_dir).unwrap();
+            let cfg_res = config::read_from_toml(&Path::new("."));
+
+            let no_generator_configs: HashMap<Arc<str>, GeneratorConfig> = HashMap::new();
+            let generator_configs = match cfg_res {
+                Ok(ref cfg) => &cfg.generator_configs,
+                Err(e) => {
+                    eprintln!("Warning: unable to find or read avro_codegen.toml project file.  Only internal generators can be shown. ({})", e);
+                    &no_generator_configs
+                }
+            };
+            
+            let gen_res = get_generator(generator.as_ref(), generator_configs);
             let generator_info = match gen_res {
                 Ok(g) => g,
                 Err(e) => {
@@ -317,7 +342,8 @@ fn main() {
                 }
             };
 
-            println!("Generator: {generator}");
+            println!("ID: {generator}");
+            println!("Name: {}", generator_info.name);
             println!("Description: {}", generator_info.description);
             println!("");
             println!("Params:");
@@ -329,9 +355,34 @@ fn main() {
                 );
             }
         }
+        Command::List { project_dir} => {
+            let canonical_project_dir = Path::new(project_dir.as_ref()).canonicalize().unwrap();
+            set_current_dir(&canonical_project_dir).unwrap();
+            let cfg_res = config::read_from_toml(&Path::new("."));
+
+            let mut generator_names: Vec<Arc<str>> = match cfg_res {
+                Ok(cfg) => cfg.generator_configs.keys().cloned().collect(),
+                Err(e) => {
+                    eprintln!("Warning: unable to find or read avro_codegen.toml project file.  Only internal generators will be listed. ({})", e);
+                    Vec::new()
+                }
+            };
+
+            for gen in INTERNAL_GENERATOR_NAMES {
+                if let None = generator_names.iter().find(|s| s.as_ref() == gen) {
+                    generator_names.push(Arc::from(gen.to_owned()));
+                }
+            }
+            
+            for gen in generator_names {
+                println!("{}", gen);
+            }
+
+        }
         Command::Export {
             output: _,
             generator: _,
+            project_dir: _,
         } => {}
     };
 }

@@ -10,6 +10,9 @@ use serde::Deserialize;
 #[derive(Deserialize, Debug)]
 pub struct GeneratorConfig {
     #[serde(default)]
+    pub path: Option<String>,
+
+    #[serde(default)]
     pub params: serde_json::Map<String, serde_json::Value>,
 }
 

@@ -11,6 +11,7 @@ use flate2::read::GzDecoder;
 use glob::glob;
 use tera::Tera;
 
+use crate::config::GeneratorConfig;
 use crate::tera_env::create_tera;
 
 #[derive(Clone)]
@@ -189,8 +190,7 @@ fn read_builtin_generator_archive(archive_data: &[u8]) -> Result<Generator, anyh
     }
 }
 
-fn create_generator_from_path(generator_dir_str: &str) -> Result<Generator, anyhow::Error> {
-    let generator_dir = Path::new(generator_dir_str);
+fn create_generator_from_path(generator_dir: &Path) -> Result<Generator, anyhow::Error> {
     let params_toml_path = generator_dir.join("generator.toml");
 
     // One of these paths must exist
@@ -236,16 +236,44 @@ fn create_generator_from_path(generator_dir_str: &str) -> Result<Generator, anyh
     })
 }
 
-pub fn get_generator(generator_name_or_dir: &str) -> Result<Generator, anyhow::Error> {
-    match generator_name_or_dir {
-        "rust" => {
-            let archive_data = include_bytes!(env!("GENERATOR_ARCHIVE_PATH_rust"));
+enum GeneratorSource<'a> {
+    Internal(&'a str),
+    Path(&'a Path),
+}
+
+pub const INTERNAL_GENERATOR_NAMES: [&'static str; 2] = ["rust", "ts"];
+
+fn get_internal_generator_data(generator_name: &str) -> Result<&'static [u8], anyhow::Error> {
+    match generator_name {
+        "rust" => Ok(include_bytes!(env!("GENERATOR_ARCHIVE_PATH_rust"))),
+        "ts" => Ok(include_bytes!(env!("GENERATOR_ARCHIVE_PATH_ts"))),
+        _ => Err(anyhow!("Unknown generator: {}", generator_name))
+    }
+}
+
+fn get_generator_source<'a>(generator_name: &'a str, generator_configs: &'a HashMap<Arc<str>, GeneratorConfig>) -> GeneratorSource<'a> {
+    match generator_configs.get(generator_name) {
+        Some(cfg) => {
+            if let Some(path) = cfg.path.as_ref() {
+                GeneratorSource::Path(Path::new(path.as_str()))
+            } else {
+                GeneratorSource::Internal(generator_name)
+            }
+        }
+        None => GeneratorSource::Internal(generator_name)
+    }
+}
+
+pub fn get_generator(generator_name: &str, generator_configs: &HashMap<Arc<str>, GeneratorConfig>) -> Result<Generator, anyhow::Error> {
+    let source = get_generator_source(generator_name, generator_configs);
+
+    match source {
+        GeneratorSource::Internal(name) => {
+            let archive_data = get_internal_generator_data(name)?;
             read_builtin_generator_archive(archive_data)
         }
-        "ts" => {
-            let archive_data = include_bytes!(env!("GENERATOR_ARCHIVE_PATH_ts"));
-            read_builtin_generator_archive(archive_data)
+        GeneratorSource::Path(path) => {
+            create_generator_from_path(path)
         }
-        _ => create_generator_from_path(generator_name_or_dir),
     }
 }

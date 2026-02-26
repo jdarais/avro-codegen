@@ -1,0 +1,2 @@
+name = "Custom"
+description = "A custom generator that just spits out the schema json for the input types"

@@ -4,13 +4,13 @@ use std::sync::Arc;
 
 use mlua::{Lua, LuaOptions, LuaSerdeExt, StdLib};
 
-use crate::datamodel::{PackageInfo, SchemaInfo};
+use crate::datamodel::PackageInfo;
 use crate::generator::Generator;
 
 pub struct GeneratorContext {
     output_dir: PathBuf,
     generator: Arc<Generator>,
-    schemas: Vec<SchemaInfo>,
+    schemas: Vec<serde_json::Value>,
     package: PackageInfo,
     params: serde_json::Map<String, serde_json::Value>,
 }
@@ -19,7 +19,7 @@ impl GeneratorContext {
     pub fn new(
         output_dir: PathBuf,
         generator: Arc<Generator>,
-        schemas: Vec<SchemaInfo>,
+        schemas: Vec<serde_json::Value>,
         package: PackageInfo,
         params: serde_json::Map<String, serde_json::Value>,
     ) -> GeneratorContext {
