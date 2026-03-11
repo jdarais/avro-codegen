@@ -1,6 +1,7 @@
 {% import "types.tera" as types -%}
 
 import avro from "avsc";
+import { Buffer } from "buffer";
 
 {% macro rel_path_prefix(namespace) -%}
 {%- if namespace == "" -%}
@@ -23,13 +24,13 @@ from "{{ self::rel_path_prefix(namespace=params.namespace) }}/{{ ref.namespace |
 {% if schema.type == "record" -%}
 export interface {{ schema.name | title_case }} {
 {% for field_schema in schema.fields -%}
-{#    #}    {{ field_schema.name }}: {{ types::render_type(schema=field_schema.type, from_namespace=params.namespace, is_node=params.is_node) }},
+{#    #}    {{ field_schema.name }}: {{ types::render_type(schema=field_schema.type, from_namespace=params.namespace) }},
 {% endfor -%}
 }
 {% elif schema.type == "enum" -%}
 export type {{ schema.name }} = {% for symbol in schema.symbols %}"{{ symbol }}"{% if not loop.last %} | {% endif %}{% endfor %};
 {% else -%}
-export type {{ schema.name }} = {{ types::render_type(schema=schema, from_namespace=params.namespace, is_node=params.is_node) }};
+export type {{ schema.name }} = {{ types::render_type(schema=schema, from_namespace=params.namespace) }};
 {% endif %}
 
 export const {{ schema.name | const_case }}_SCHEMA: avro.Type;

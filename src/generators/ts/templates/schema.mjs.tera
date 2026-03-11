@@ -1,6 +1,7 @@
 {% import "types.tera" as types -%}
 
 import avro from "avsc";
+import { Buffer } from "buffer";
 
 {% macro rel_path_prefix(namespace) -%}
 {%- if namespace == "" -%}

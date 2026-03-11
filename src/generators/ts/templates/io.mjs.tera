@@ -1,9 +1,6 @@
 import avro from "avsc";
 import { parse as parseUuid, stringify as stringifyUuid } from "uuid";
-
-{% if params.is_node -%}
-import { Buffer } from "node:buffer";
-{% endif -%}
+import { Buffer } from "buffer";
 
 const ONE_DAY_IN_MILLIS = 1000 * 60 * 60 * 24;
 
@@ -41,16 +38,9 @@ export class TimestampMillisType extends avro.types.LogicalType {
 
 export class DurationType extends avro.types.LogicalType {
     _fromValue(val) {
-{%- if params.is_node %}
         const months = val.readUInt32LE(0);
         const days = val.readUInt32LE(4);
         const millis = val.readUInt32LE(8);
-{%- else %}
-        const dataView = new DataView(val.buffer);
-        const months = dataView.getUint32(0, true);
-        const days = dataView.getUint32(4, true);
-        const millis = dataView.getUint32(8, true);
-{%- endif %}
 
         return { months: months, days: days, millis: millis };
     }
@@ -61,11 +51,7 @@ export class DurationType extends avro.types.LogicalType {
         dataView.setUint32(0, val.months, true);
         dataView.setUint32(4, val.days, true);
         dataView.setUint32(8, val.millis, true);
-{% if params.is_node %}
         return Buffer.from(buf);
-{%- else %}
-        return new Uint8Array(buf);
-{%- endif %}
     }
 
     _resolve(type) {
@@ -91,11 +77,7 @@ export class UuidType extends avro.types.LogicalType {
             return val;
         } else {
             const arr = parseUuid(val);
-{% if params.is_node %}
             return Buffer.from(arr.buffer);
-{%- else %}
-            return arr;
-{%- endif %}
         }
     }
 

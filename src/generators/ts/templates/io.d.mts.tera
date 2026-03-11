@@ -1,8 +1,5 @@
 import avro from "avsc";
-
-{% if params.is_node -%}
-import { Buffer } from "node:buffer";
-{% endif -%}
+import { Buffer } from "buffer";
 
 const ONE_DAY_IN_MILLIS = 1000 * 60 * 60 * 24;
 
@@ -19,8 +16,8 @@ export class TimestampMillisType extends avro.types.LogicalType {
 }
 
 export class DurationType extends avro.types.LogicalType {
-    _fromValue(val: {% if params.is_node %}Buffer{% else %}Uint8Array{% endif %}): { months: number, days: number, millis: number };
-    _toValue(val: { months: number, days: number, millis: number }): {% if params.is_node %}Buffer{% else %}Uint8Array{% endif %};
+    _fromValue(val: Buffer): { months: number, days: number, millis: number };
+    _toValue(val: { months: number, days: number, millis: number }): Buffer;
 }
 
 export const _logicalTypes = {

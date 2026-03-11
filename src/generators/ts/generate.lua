@@ -31,11 +31,8 @@ table.sort(namespaces)
 
 render("package.json.tera", "package.json", {namespaces=namespaces})
 
-render("io.mjs.tera", "dist/node/_io.mjs", {is_node=true})
-render("io.mjs.tera", "dist/browser/_io.mjs", {is_node=false})
-
-render("io.d.mts.tera", "dist/node/_io.d.mts", {is_node=true})
-render("io.d.mts.tera", "dist/browser/_io.d.mts", {is_node=false})
+render("io.mjs.tera", "dist/_io.mjs")
+render("io.d.mts.tera", "dist/_io.d.mts")
 
 for namespace, schemas in pairs(schemas_by_namespace) do
     local refs = map()
@@ -59,9 +56,6 @@ for namespace, schemas in pairs(schemas_by_namespace) do
     local impl_file_path = namespace:gsub("[.]", "/"):gsub("(.+)$", "%1/") .. "types.mjs"
     local types_file_path = namespace:gsub("[.]", "/"):gsub("(.+)$", "%1/") .. "types.d.mts"
 
-    render("schema.mjs.tera", "dist/node/" .. impl_file_path, map {namespace=namespace, schemas=schemas_list, refs=refs_list, is_node=true})
-    render("schema.mjs.tera", "dist/browser/" .. impl_file_path, map {namespace=namespace, schemas=schemas_list, refs=refs_list, is_node=false})
-    
-    render("schema.d.mts.tera", "dist/node/" .. types_file_path, map {namespace=namespace, schemas=schemas_list, refs=refs_list, is_node=true})
-    render("schema.d.mts.tera", "dist/browser/" .. types_file_path, map {namespace=namespace, schemas=schemas_list, refs=refs_list, is_node=false})
+    render("schema.mjs.tera", "dist/" .. impl_file_path, map {namespace=namespace, schemas=schemas_list, refs=refs_list})
+    render("schema.d.mts.tera", "dist/" .. types_file_path, map {namespace=namespace, schemas=schemas_list, refs=refs_list})
 end

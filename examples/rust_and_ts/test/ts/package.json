@@ -3,16 +3,34 @@
   "version": "0.1.0",
   "scripts": {
     "build": "tsc -p .",
-    "test": "ts-node node_modules/jasmine/bin/jasmine"
+    "test": "ts-node node_modules/jasmine/bin/jasmine",
+    "bundle:browser:process": "esbuild spec/browser/helpers/process.mjs --bundle --outdir=spec/browser/dist/helpers",
+    "bundle:browser:tests": "esbuild spec/browser/main.spec.browser.mjs --bundle --outdir=spec/browser/dist --alias:util=util --alias:stream=stream-browserify --alias:path=path-browserify --alias:buffer=buffer --alias:zlib=browserify-zlib --alias:assert=assert --alias:events=events",
+    "bundle:browser": "npm run bundle:browser:process && npm run bundle:browser:tests",
+    "test:browser": "npx jasmine-browser-runner runSpecs"
   },
   "dependencies": {
+    "assert": "^2.1.0",
     "avsc": "^5.7.9",
-    "rust-and-ts": "../../output/ts"
+    "browserify-zlib": "^0.2.0",
+    "buffer": "^6.0.3",
+    "events": "^3.3.0",
+    "path-browserify": "^1.0.1",
+    "process": "^0.11.10",
+    "rust-and-ts": "../../output/ts",
+    "stream-browserify": "^3.0.0",
+    "util": "^0.12.5",
+    "uuid": "^13.0.0"
   },
   "devDependencies": {
+    "@rollup/plugin-node-resolve": "^16.0.3",
     "@types/jasmine": "^6.0.0",
     "@types/node": "^25.0.10",
+    "esbuild": "^0.27.3",
+    "glob": "^13.0.6",
     "jasmine": "^6.0.0",
+    "jasmine-browser-runner": "^4.0.0",
+    "rollup": "^4.59.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
   }
