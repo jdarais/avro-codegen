@@ -4,10 +4,8 @@
   "scripts": {
     "build": "tsc -p .",
     "test": "ts-node node_modules/jasmine/bin/jasmine",
-    "bundle:browser:process": "esbuild spec/browser/helpers/process.mjs --bundle --outdir=spec/browser/dist/helpers",
-    "bundle:browser:tests": "esbuild spec/browser/main.spec.browser.mjs --bundle --outdir=spec/browser/dist --alias:util=util --alias:stream=stream-browserify --alias:path=path-browserify --alias:buffer=buffer --alias:zlib=browserify-zlib --alias:assert=assert --alias:events=events",
-    "bundle:browser": "npm run bundle:browser:process && npm run bundle:browser:tests",
-    "test:browser": "npx jasmine-browser-runner runSpecs"
+    "bundle:browser": "node esbuild.mjs",
+    "test:browser": "npm run bundle:browser && npx jasmine-browser-runner runSpecs"
   },
   "dependencies": {
     "assert": "^2.1.0",
