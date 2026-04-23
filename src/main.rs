@@ -63,13 +63,9 @@ enum Command {
         #[arg(short, long)]
         output: Arc<str>,
 
-        /// Generator name or directory to export
+        /// Generator name to export
         #[arg()]
         generator: Arc<str>,
-
-        /// Schema project directory.  If the specified directory is not a schema project, internal generators can still be exported
-        #[arg(short, long, default_value = ".")]
-        project_dir: Arc<str>,
     },
 }
 
@@ -382,7 +378,6 @@ fn main() {
         Command::Export {
             output: _,
             generator: _,
-            project_dir: _,
         } => {}
     };
 }

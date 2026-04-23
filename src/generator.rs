@@ -241,12 +241,13 @@ enum GeneratorSource<'a> {
     Path(&'a Path),
 }
 
-pub const INTERNAL_GENERATOR_NAMES: [&'static str; 2] = ["rust", "ts"];
+pub const INTERNAL_GENERATOR_NAMES: [&'static str; 3] = ["rust", "ts", "cpp"];
 
 fn get_internal_generator_data(generator_name: &str) -> Result<&'static [u8], anyhow::Error> {
     match generator_name {
         "rust" => Ok(include_bytes!(env!("GENERATOR_ARCHIVE_PATH_rust"))),
         "ts" => Ok(include_bytes!(env!("GENERATOR_ARCHIVE_PATH_ts"))),
+        "cpp" => Ok(include_bytes!(env!("GENERATOR_ARCHIVE_PATH_cpp"))),
         _ => Err(anyhow!("Unknown generator: {}", generator_name))
     }
 }

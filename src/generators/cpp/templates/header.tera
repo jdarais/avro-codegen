@@ -1,0 +1,16 @@
+#pragma once
+
+#include "avro/Encoder.hh"
+#include "avro/Decoder.hh"
+
+{% for incl in params.includes -%}
+#include "{{ incl }}"
+{% endfor %}
+namespace {{ params.namespace }} {
+
+{% for schema in params.schemas -%}
+// Schema {{ schema.fullname }}
+{% endfor -%}
+
+}
+

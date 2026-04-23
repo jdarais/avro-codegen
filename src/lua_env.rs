@@ -132,6 +132,24 @@ mod tests {
     use super::*;
 
     #[test]
+    fn test_nested_map() -> mlua::Result<()> {
+        let lua = create_basic_lua_env()?;
+        lua.load(r#"
+            local name_groups = array {
+                [1] = array { [1] = "Jerry", [2] = "George", [3] = "Elaine", [4] = "Kramer" },
+                [2] = array { [1] = "Homer", [2] = "Marge", [3] = "Bart", [4] = "Lisa", [5] = "Maggie" }
+            }
+            local greetings = name_groups:map(function (names)
+                return "I would like to greet you all: "..table.concat(names:map(function(name) return "Hi "..name.."! " end))
+            end)
+
+            assert(greetings[1] == "I would like to greet you all: Hi Jerry! Hi George! Hi Elaine! Hi Kramer! ", greetings[1])
+            assert(greetings[2] == "I would like to greet you all: Hi Homer! Hi Marge! Hi Bart! Hi Lisa! Hi Maggie! ", greetings[2])
+        
+        "#).exec()
+    }
+
+    #[test]
     fn test_string_title_to_snake_case() -> mlua::Result<()> {
         let lua = create_basic_lua_env()?;
         lua.load(

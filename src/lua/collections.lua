@@ -12,8 +12,10 @@ local array_methods = {
     end,
 
     map = function(self, map_fn)
-        result = setmetatable({}, array_metatable)
+        local result = setmetatable({}, array_metatable)
         for i, v in ipairs(self) do
+            -- index and value going into map_fn are intentionally reversed.  This allows simple
+            -- map functions that just operate on the value, but the index is available if needed
             result:push(map_fn(v, i))
         end
         return result
@@ -38,6 +40,25 @@ function array_metatable.__add(self, other)
     result:append(self)
     result:append(other)
     return result
+end
+
+function array_metatable.__tostring(self, visited)
+    if visited == nil then
+        visited = {}
+    end
+    
+    if visited[self] then
+        return "..."
+    end
+
+    visited[self] = true
+
+    local s = "{ "
+    for i, v in ipairs(self) do
+        s = s..tostring(i, visited).." = "..tostring(v, visited)..", "
+    end
+    s = s.."}"
+    return s
 end
 
 
@@ -88,6 +109,24 @@ local map_metatable = {
 
         rawset(self, key, value)
     end,
+    __tostring = function(self, visited)
+        if visited == nil then
+            visited = {}
+        end
+        
+        if visited[self] then
+            return "..."
+        end
+
+        visited[self] = true
+        
+        local s = "{ "
+        for k, v in pairs(self) do
+            s = s..tostring(k, visited).." = "..tostring(v, visited)..", "
+        end
+        s = s.."}"
+        return s
+    end
 }
 
 local function map(init)

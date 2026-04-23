@@ -1,0 +1,2 @@
+name = "cpp"
+description = "Generate C++ structs that can be serialied/deserialized using the C++ avro library"

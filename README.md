@@ -112,7 +112,7 @@ To assist with code generation, the lua environment has been augmented with some
 - `string.to_title_case(s)` - converts an identifier string to title case (e.g. `MyIdentifierName`)
 - `string.to_camel_case(s)` - converts an identifier string to camel case (e.g. `myIdentifierName`)
 - `string.to_const_case(s)` - converts an identifier string to const case (e.g. `MY_IDENTIFIER_NAME`)
-- `string.split(s, sep)` - returns an array containing segments of the string `s` split on `sep`. (e.g. `string.split("hello world", " ")` returns `{ 1 = "hello", 2 = "world" }`)
+- `string.split(s, sep)` - returns an array containing segments of the string `s` split on `sep`. (e.g. `string.split("hello world", " ")` returns `{ 1 = "hello", 2 = "world" }`).  `sep` is a regular expression that follows the same syntax as lua's `string.find` and `string.gusb` functions.
 
 ### Tera Template Environment
 
