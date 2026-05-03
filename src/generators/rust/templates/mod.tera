@@ -14,7 +14,7 @@ pub mod {{ mod }};
 {% endfor -%}
 
 {% macro render_record_field(name, schema) -%}
-{%- if schema.logical_type is defined and schema.logical_type == "duration" %}
+{% if schema.logical_type is defined and schema.logical_type == "duration" -%}
 {# #}    #[serde(with="crate::_io::duration_serde")]
 {% elif schema.logical_type is not defined and schema.type == "bytes" or schema.type == "fixed" -%}
 {# #}    #[serde(with="serde_bytes")]

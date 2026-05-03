@@ -1,103 +1,102 @@
-
 {% macro render_union_type(cardinality) -%}
 #[derive(serde::Serialize, serde::Deserialize, Debug, Eq, PartialEq)]
 pub enum Union{{ cardinality }}<{% for i in range(end=cardinality) %}T{{i+1}}{% if not loop.last %},{% endif %}{% endfor %}> {
-{% if cardinality >= 1 -%}
-    {# #}   Variant1(T1),
-{% endif -%}
-{% if cardinality >= 2 -%}
-    {# #}   Variant2(T2),
-{% endif -%}
-{% if cardinality >= 3 -%}
-    {# #}   Variant3(T3),
-{% endif -%}
-{% if cardinality >= 4 -%}
-    {# #}   Variant4(T4),
-{% endif -%}
-{% if cardinality >= 5 -%}
-    {# #}   Variant5(T5),
-{% endif -%}
-{% if cardinality >= 6 -%}
-    {# #}   Variant6(T6),
-{% endif -%}
-{% if cardinality >= 7 -%}
-    {# #}   Variant7(T7),
-{% endif -%}
-{% if cardinality >= 8 -%}
-    {# #}   Variant8(T8),
-{% endif -%}
-{% if cardinality >= 9 -%}
-    {# #}   Variant9(T9),
-{% endif -%}
-{% if cardinality >= 10 -%}
-    {# #}   Variant10(T10),
-{% endif -%}
-{% if cardinality >= 11 -%}
-    {# #}   Variant11(T11),
-{% endif -%}
-{% if cardinality >= 12 -%}
-    {# #}   Variant12(T12),
-{% endif -%}
-{% if cardinality >= 13 -%}
-    {# #}   Variant13(T13),
-{% endif -%}
-{% if cardinality >= 14 -%}
-    {# #}   Variant14(T14),
-{% endif -%}
-{% if cardinality >= 15 -%}
-    {# #}   Variant15(T15),
-{% endif -%}
-{% if cardinality >= 16 -%}
-    {# #}   Variant15(T16),
-{% endif -%}
-{% if cardinality >= 17 -%}
-    {# #}   Variant15(T17),
-{% endif -%}
-{% if cardinality >= 18 -%}
-    {# #}   Variant15(T18),
-{% endif -%}
-{% if cardinality >= 19 -%}
-    {# #}   Variant15(T19),
-{% endif -%}
-{% if cardinality >= 20 -%}
-    {# #}   Variant20(T20),
-{% endif -%}
-{% if cardinality >= 21 -%}
-    {# #}   Variant21(T21),
-{% endif -%}
-{% if cardinality >= 22 -%}
-    {# #}   Variant22(T22),
-{% endif -%}
-{% if cardinality >= 23 -%}
-    {# #}   Variant23(T23),
-{% endif -%}
-{% if cardinality >= 24 -%}
-    {# #}   Variant24(T24),
-{% endif -%}
-{% if cardinality >= 25 -%}
-    {# #}   Variant25(T25),
-{% endif -%}
-{% if cardinality >= 26 -%}
-    {# #}   Variant26(T26),
-{% endif -%}
-{% if cardinality >= 27 -%}
-    {# #}   Variant27(T27),
-{% endif -%}
-{% if cardinality >= 28 -%}
-    {# #}   Variant28(T28),
-{% endif -%}
-{% if cardinality >= 29 -%}
-    {# #}   Variant29(T29),
-{% endif -%}
-{% if cardinality >= 30 -%}
-    {# #}   Variant30(T30),
-{% endif -%}
-{% if cardinality > 30 -%}
+{%- if cardinality >= 1 %}
+   Variant1(T1),
+{%- endif %}
+{%- if cardinality >= 2 %}
+   Variant2(T2),
+{%- endif %}
+{%- if cardinality >= 3 %}
+   Variant3(T3),
+{%- endif %}
+{%- if cardinality >= 4 %}
+   Variant4(T4),
+{%- endif %}
+{%- if cardinality >= 5 %}
+   Variant5(T5),
+{%- endif %}
+{%- if cardinality >= 6 %}
+   Variant6(T6),
+{%- endif %}
+{%- if cardinality >= 7 %}
+   Variant7(T7),
+{%- endif %}
+{%- if cardinality >= 8 %}
+   Variant8(T8),
+{%- endif %}
+{%- if cardinality >= 9 %}
+   Variant9(T9),
+{%- endif %}
+{%- if cardinality >= 10 %}
+   Variant10(T10),
+{%- endif %}
+{%- if cardinality >= 11 %}
+   Variant11(T11),
+{%- endif %}
+{%- if cardinality >= 12 %}
+   Variant12(T12),
+{%- endif %}
+{%- if cardinality >= 13 %}
+   Variant13(T13),
+{%- endif %}
+{%- if cardinality >= 14 %}
+   Variant14(T14),
+{%- endif %}
+{%- if cardinality >= 15 %}
+   Variant15(T15),
+{%- endif %}
+{%- if cardinality >= 16 %}
+   Variant15(T16),
+{%- endif %}
+{%- if cardinality >= 17 %}
+   Variant15(T17),
+{%- endif %}
+{%- if cardinality >= 18 %}
+   Variant15(T18),
+{%- endif %}
+{%- if cardinality >= 19 %}
+   Variant15(T19),
+{%- endif %}
+{%- if cardinality >= 20 %}
+   Variant20(T20),
+{%- endif %}
+{%- if cardinality >= 21 %}
+   Variant21(T21),
+{%- endif %}
+{%- if cardinality >= 22 %}
+   Variant22(T22),
+{%- endif %}
+{%- if cardinality >= 23 %}
+   Variant23(T23),
+{%- endif %}
+{%- if cardinality >= 24 %}
+   Variant24(T24),
+{%- endif %}
+{%- if cardinality >= 25 %}
+   Variant25(T25),
+{%- endif %}
+{%- if cardinality >= 26 %}
+   Variant26(T26),
+{%- endif %}
+{%- if cardinality >= 27 %}
+   Variant27(T27),
+{%- endif %}
+{%- if cardinality >= 28 %}
+   Variant28(T28),
+{%- endif %}
+{%- if cardinality >= 29 %}
+   Variant29(T29),
+{%- endif %}
+{%- if cardinality >= 30 %}
+   Variant30(T30),
+{%- endif %}
+{%- if cardinality > 30 %}
     {{ throw(message="Unions with more than 30 variants are not supported") }}
-{% endif -%}
+{%- endif %}
 }
-{% endmacro -%}
+{%- endmacro -%}
 
-{% for cardinality in params.union_cardinalities -%}
+{% for cardinality in params.union_cardinalities %}
 {{ self::render_union_type(cardinality=cardinality) }}
-{% endfor -%}
+{% endfor %}
