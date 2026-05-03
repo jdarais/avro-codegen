@@ -1,0 +1,49 @@
+{% macro render_type(schema) -%}
+{# First check for logical types that use special types #}
+{%- if schema.type == "null" -%}
+    std::monostate
+{%- elif schema.type == "boolean" -%}
+    bool
+{%- elif schema.type == "int" -%}
+    int32_t
+{%- elif schema.type == "long" -%}
+    int64_t
+{%- elif schema.type == "float" -%}
+    float
+{%- elif schema.type == "double" -%}
+    double
+{%- elif schema.type == "bytes" -%}
+    std::vector<uint8_t>
+{%- elif schema.type == "string" -%}
+    std::string
+{%- elif schema.type == "array" -%}
+    std::vector<{{ self::render_type(schema=schema.items) }}>
+{%- elif schema.type == "map" -%}
+    std::unordered_map<std::string, {{ self::render_type(schema=schema.values) }}>
+{%- elif schema.type == "union" -%}
+    {{ self::render_union_type(schema=schema) }}
+{%- elif schema.type == "ref" -%}
+{%- if schema.ref_type == "record" -%}
+{#- TODO: Use a type that enforces that it cannot be null -#}
+    std::unique_ptr<{{ schema.fullname | replace(from=".", to="::") }}>
+{%- else -%}
+    {{ schema.fullname | replace(from=".", to="::") }}
+{%- endif -%}
+{%- elif schema.type == "fixed" -%}
+    uint8_t[{{ schema.size }}]
+{%- else -%}
+    std::monostate /* unknown type: {{ schema.type }} */
+{%- endif -%}
+{% endmacro -%}
+
+{% macro render_union_type(schema) -%}
+{%- if schema.variants | length == 2 and schema.variants[0].type == "null" -%}
+std::optional<{{ self::render_type(schema=schema.variants[1]) }}>
+{%- else -%}
+std::variant<
+{%- for variant in schema.variants -%}
+{{ self::render_type(schema=variant) }}{% if not loop.last %}, {% endif %}
+{%- endfor -%}
+>
+{%- endif -%}
+{%- endmacro -%}

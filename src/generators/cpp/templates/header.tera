@@ -2,6 +2,13 @@
 
 #pragma once
 
+// Includes needed for types that can be used by generated code
+// The code generator may narrow down the includes to only those needed by this particular header
+// in the future
+#include <variant>
+#include <optional>
+#include <memory>
+
 #include "avro/Encoder.hh"
 #include "avro/Decoder.hh"
 
@@ -10,17 +17,62 @@
 {% endfor %}
 namespace {{ params.namespace }} {
 
-{% for schema in params.schemas -%}
-// Schema {{ schema.fullname }}
-{% if schema.type == "record" -%}
-struct {{ schema.name | title_case }} {
-{%- for field in schema.fields %}
-    {{ field.type.type }} {{ field.name | snake_case }};
+// Forward declarations for record types
+{%- for record_ref in params.record_refs %}
+struct {{ record_ref | replace(from=".", to="::") }};
 {%- endfor %}
-};
-{% endif -%}
 
+//
+// Enum and Fixed types
+//
+{% for schema in params.schemas -%}
+{%- if schema.type == "enum" %}
+// Schema {{ schema.fullname }}
+class {{ schema.name | title_case }} {
+public:
+    enum ValueType {
+{%- for symbol in schema.symbols %}
+        {{ symbol | const_case }},
+{%- endfor %}
+    };
+
+    {{ schema.name | title_case }}();
+    {{ schema.name | title_case }}(ValueType value);
+    {{ schema.name | title_case }}(const {{ schema.name | title_case }}& other);
+    {{ schema.name | title_case }}({{ schema.name | title_case }}&& other);
+
+    ~{{ schema.name | title_case }}();
+
+
+    static {{ schema.name | title_case }} from_string(std::string_view s);
+
+    std::ostream& operator<<(std::ostream& os) const;
+    std::string_view to_string() const;
+
+private:
+    ValueType m_value;
+};
+
+{%- elif schema.type == "fixed" %}
+// Schema {{ schema.fullname }}
+struct {{ schema.name | title_case }} { uint8_t value[{{ schema.size }}]; };
+
+{% endif -%}
 {% endfor -%}
 
-}
+//
+// Record types
+//
+{%- for schema in params.schemas %}
+{%- if schema.type == "record" %}
+// Schema {{ schema.fullname }}
+struct {{ schema.name | title_case }} {
+{%- for field in schema.fields %}
+    {{ types::render_type(schema=field.type) }} {{ field.name | snake_case }};
+{%- endfor %}
+};
+constexpr std::string_view {{ schema.name | const_case }}_SCHEMA_JSON = R"({{ schema.json }})";
 
+{% endif -%}
+{% endfor -%}
+}

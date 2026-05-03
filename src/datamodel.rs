@@ -69,6 +69,19 @@ pub fn denormalize_schema(schema: &Schema, schemata: &[Schema]) -> anyhow::Resul
     }
 }
 
+fn get_ref_type(name: &apache_avro::schema::Name, schemata: &[Schema]) -> &'static str {
+    let ref_schema = schemata.iter().find(|&s| s.name().map(|n| n == name).unwrap_or(false));
+    match ref_schema {
+        Some(Schema::Record(_)) => "record",
+        Some(Schema::Enum(_)) => "enum",
+        Some(Schema::Fixed(_)) => "fixed",
+        Some(Schema::Decimal(_)) => "fixed",
+        Some(Schema::Ref{name}) => get_ref_type(name, schemata),
+        Some(x) => panic!("Tried to follow named reference, but got an unnamed type: {:?}", x),
+        None => panic!("Tried to follow reference for {}, but schema was not found", name),
+    }
+}
+
 pub fn schema_to_json(
     schema: &Schema,
     schema_info: &SchemaInfo,
@@ -135,7 +148,8 @@ pub fn schema_to_json(
                     "type": "ref",
                     "name": record_schema.name.name,
                     "namespace": record_schema.name.namespace.as_ref().cloned().unwrap_or_else(String::new),
-                    "fullname": record_schema.name.fullname(None)
+                    "fullname": record_schema.name.fullname(None),
+                    "ref_type": "record",
                 }))
             } else {
                 let mut fields: Vec<serde_json::Value> =
@@ -167,6 +181,7 @@ pub fn schema_to_json(
                     "name": enum_schema.name.name,
                     "namespace": enum_schema.name.namespace.as_ref().cloned().unwrap_or_else(String::new),
                     "fullname": enum_schema.name.fullname(None),
+                    "ref_type": "enum",
                 }))
             } else {
                 Ok(json!({
@@ -189,6 +204,7 @@ pub fn schema_to_json(
                     "name": fixed_schema.name.name,
                     "namespace": fixed_schema.name.namespace.as_ref().cloned().unwrap_or_else(String::new),
                     "fullname": fixed_schema.name.fullname(None),
+                    "ref_type": "fixed",
                 }))
             } else {
                 Ok(json!({
@@ -339,6 +355,7 @@ pub fn schema_to_json(
                     "name": fixed.name.name,
                     "namespace": fixed.name.namespace.as_ref().cloned().unwrap_or_else(String::new),
                     "fullname": fixed.name.fullname(None),
+                    "ref_type": "fixed",
                 }))
             } else {
                 Ok(json!({
@@ -352,11 +369,14 @@ pub fn schema_to_json(
                 }))
             }
         }
-        Schema::Ref { name } => Ok(json!({
-            "type": "ref",
-            "name": name.name,
-            "namespace": name.namespace.as_ref().cloned().unwrap_or_else(String::new),
-            "fullname": name.fullname(None)
-        })),
+        Schema::Ref { name } => {
+            Ok(json!({
+                "type": "ref",
+                "name": name.name,
+                "namespace": name.namespace.as_ref().cloned().unwrap_or_else(String::new),
+                "fullname": name.fullname(None),
+                "ref_type": get_ref_type(name, schemata),
+            }))
+        },
     }
 }

@@ -61,6 +61,10 @@ All enum records contain:
 - `symbols` - An array of strings representing the possible enum values
 - `default` - A string representing the default enum value
 
+All union records contain:
+
+- `variants` - An array of schemas representing the variants of the union, in order
+
 All fixed records contain:
 
 - `size` - An integer representing the fixed type's size
@@ -81,6 +85,10 @@ All schemas with a decimal logical type contain:
 
 - `precision` - An integer representing the decimal precision
 - `scale` - An integer representing the decimal scale
+
+All schemas with a ref type contain:
+
+- `ref_type` - The concrete type of the referenced type, (i.e. "record", "enum" or "fixed").
 
 #### Package
 

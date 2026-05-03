@@ -1,23 +1,24 @@
-local function find_ref_namespaces(schema, refs)
+local function find_ref_namespaces(schema, refs, namespaces)
     if schema.type == "ref" then
-        refs[schema.namespace] = true
+        refs[schema.fullname] = schema
+        namespaces[schema.namespace] = true
     elseif schema.type == "record" then
         for i, field in ipairs(schema.fields) do
-            find_ref_namespaces(field.type, refs)
+            find_ref_namespaces(field.type, refs, namespaces)
         end
     elseif schema.type == "array" then
-        find_ref_namespaces(schema.items, refs)
+        find_ref_namespaces(schema.items, refs, namespaces)
     elseif schema.type == "map" then
-        find_ref_namespaces(schema.values, refs)
+        find_ref_namespaces(schema.values, refs, namespaces)
     elseif schema.type == "union" then
         for i, variant in ipairs(schema.variants) do
-            find_ref_namespaces(variant, refs)
+            find_ref_namespaces(variant, refs, namespaces)
         end
     end
 end
 
 local function header_name(ns)
-    return package.name.."/"..table.concat(ns:split("[.]"):map(function (s) return s.."/" end)).."types.h"
+    return table.concat(ns:split("[.]"):map(function (s) return s.."/" end)).."types.h"
 end
 
 local schemas_by_namespace = map{}
@@ -32,18 +33,33 @@ for i, schema in ipairs(schemas) do
 end
 
 for ns, schemas in pairs(schemas_by_namespace) do
+    local refs = map{}
     local ref_namespaces = map{}
     for i, schema in ipairs(schemas) do
-        find_ref_namespaces(schema, ref_namespaces)
+        find_ref_namespaces(schema, refs, ref_namespaces)
     end
 
     local incl = ref_namespaces:keys():map(header_name)
     table.sort(incl)
 
-    local cpp_namespace = package.name
-    if #ns > 0 then
-        cpp_namespace = cpp_namespace.."::"..ns:gsub("[.]", "::")
+    local record_refs = array{}
+    for ref_name, ref_schema in pairs(refs) do
+        if ref_schema.ref_type == "record" then
+            record_refs:push(ref_name)
+        end
     end
+    table.sort(record_refs)
 
-    render("header.tera", "include/"..header_name(ns), {namespace=cpp_namespace, schemas=schemas, includes=incl})
+    local cpp_namespace = ns:gsub("[.]", "::")
+
+    render(
+        "header.tera",
+        "include/"..header_name(ns),
+        {
+            namespace=cpp_namespace,
+            schemas=schemas,
+            includes=incl,
+            record_refs=record_refs
+        }
+    )
 end
