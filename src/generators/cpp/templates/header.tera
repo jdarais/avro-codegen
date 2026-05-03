@@ -1,3 +1,5 @@
+{% import "types.tera" as types -%}
+
 #pragma once
 
 #include "avro/Encoder.hh"
@@ -10,6 +12,14 @@ namespace {{ params.namespace }} {
 
 {% for schema in params.schemas -%}
 // Schema {{ schema.fullname }}
+{% if schema.type == "record" -%}
+struct {{ schema.name | title_case }} {
+{%- for field in schema.fields %}
+    {{ field.type.type }} {{ field.name | snake_case }};
+{%- endfor %}
+};
+{% endif -%}
+
 {% endfor -%}
 
 }
