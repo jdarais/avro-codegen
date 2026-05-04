@@ -45,22 +45,36 @@ public:
 {%- endfor %}
     };
 
-    {{ schema.name | title_case }}();
-    {{ schema.name | title_case }}(ValueType value);
-    {{ schema.name | title_case }}(const {{ schema.name | title_case }}& other);
-    {{ schema.name | title_case }}({{ schema.name | title_case }}&& other);
+    {{ schema.name | title_case }}():m_value() {}
+    {{ schema.name | title_case }}(ValueType value):m_value(value) {}
+    {{ schema.name | title_case }}(const {{ schema.name | title_case }}& other):m_value(other.m_value) {}
+    {{ schema.name | title_case }}({{ schema.name | title_case }}&& other):m_value(std::move(other.m_value)) {}
 
-    ~{{ schema.name | title_case }}();
+    ~{{ schema.name | title_case }}() = default;
 
 
-    static {{ schema.name | title_case }} from_string(std::string_view s);
+    static {{ schema.name | title_case }} from_string(std::string_view s) {
+{%- for symbol in schema.symbols %}
+        {% if not loop.first %}else {% endif %}if (s == "{{ symbol }}") { return {{ schema.name | title_case }}({{ symbol | const_case }}); }
+{% endfor %}
+        else { throw std::runtime_error("Unknown enum value name: " + std::string(s)); }
+    }
 
-    std::ostream& operator<<(std::ostream& os) const;
-    std::string_view to_string() const;
+    std::ostream& operator<<(std::ostream& os) const { return os << to_string(); }
+    std::string_view to_string() const {
+        switch(m_value) {
+{%- for symbol in schema.symbols %}
+        case {{ symbol | const_case }}:
+            return "{{ symbol }}";
+{%- endfor %}
+        default:
+            throw std::runtime_error("Invalid enum value");
+        }
+    }
 
-    ValueType value() const;
-    void operator=(ValueType value);
-    void operator=(const {{ schema.name | title_case }}& other);
+    ValueType value() const { return m_value; }
+    void operator=(ValueType value) { m_value = value; }
+    void operator=(const {{ schema.name | title_case }}& other) { m_value = other.m_value; }
 
 private:
     ValueType m_value;

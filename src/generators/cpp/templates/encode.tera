@@ -37,8 +37,10 @@
 
 {% macro render_encode_union_optional_type(schema, encoder_ref, val) -%}
 if ({{ val }}) {
+    {{ encoder_ref }}.encodeUnionIndex(1);
     {{ self::render_encode_type(schema=schema.variants[1], encoder_ref=encoder_ref, val=[val, ".value()"] | join()) }}
 } else {
+    {{ encoder_ref }}.encodeUnionIndex(0);
     {{ encoder_ref }}.encodeNull();
 }
 {% endmacro -%}
