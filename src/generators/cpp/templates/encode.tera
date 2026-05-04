@@ -27,11 +27,7 @@
     {{ self::render_encode_union_variant_type(schema=schema, encoder_ref=encoder_ref, val=val) }}
 {%- endif %}
 {%- elif schema.type == "ref" -%}
-{%- if schema.ref_type == "record" -%}
-    avro::encode({{ encoder_ref }}, *{{ val }});
-{%- else -%}
     avro::encode({{ encoder_ref }}, {{ val }});
-{%- endif -%}
 {%- elif schema.type == "fixed" -%}
     {{ encoder_ref }}.encodeFixed(&{{ val }}.value, {{ schema.size }});
 {%- else -%}

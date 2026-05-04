@@ -137,5 +137,19 @@ struct codec_traits<{{ schema.namespace | replace(from=".", to="::") }}::{{ sche
     }
 };
 
+{%- if schema.type == "record" %}
+template<>
+struct codec_traits<std::unique_ptr<{{ schema.namespace | replace(from=".", to="::") }}::{{ schema.name | title_case }}>> {
+    static void encode(Encoder& e, const std::unique_ptr<{{ schema.namespace | replace(from=".", to="::") }}::{{ schema.name | title_case }}>& val) {
+        avro::encode(e, *val);
+    }
+
+    static void decode(Decoder& d, std::unique_ptr<{{ schema.namespace | replace(from=".", to="::") }}::{{ schema.name | title_case }}>& val) {
+        val = std::make_unique<{{ schema.namespace | replace(from=".", to="::") }}::{{ schema.name | title_case }}>();
+        avro::decode(d, *val);
+    }
+};
+{%- endif %}
+
 {% endfor -%}
 }

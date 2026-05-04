@@ -28,11 +28,7 @@
     {{ self::render_decode_union_variant_type(schema=schema, decoder_ref=decoder_ref, val=val) }}
 {%- endif %}
 {%- elif schema.type == "ref" -%}
-{%- if schema.ref_type == "record" -%}
-    avro::decode({{ decoder_ref }}, *{{ val }});
-{%- else -%}
     avro::decode({{ decoder_ref }}, {{ val }});
-{%- endif -%}
 {%- elif schema.type == "fixed" -%}
 {
     std::vector<uint8_t> vec = d.decodeFixed({{ schema.size }});
@@ -58,7 +54,7 @@
             break;    
         }
     default:
-        throw std::runtime_error("Invalid union index");
+        throw std::runtime_error("Invalid union index: " + std::to_string(index));
     }
 }
 {% endmacro -%}
@@ -77,7 +73,7 @@
         }
 {%- endfor %}
     default:
-        throw std::runtime_error("Invalid union index");
+        throw std::runtime_error("Invalid union index: " + std::to_string(index));
     }
 }
 {%- endmacro -%}
