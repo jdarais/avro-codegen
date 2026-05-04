@@ -1,0 +1,59 @@
+{% macro render_encode_type(schema, encoder_ref, val) -%}
+{# TODO: First check for logical types that use special types #}
+{%- if schema.type == "null" -%}
+    {{ encoder_ref }}.encodeNull();
+{%- elif schema.type == "boolean" -%}
+    {{ encoder_ref }}.encodeBool({{ val }});
+{%- elif schema.type == "int" -%}
+    {{ encoder_ref }}.encodeInt({{ val }});
+{%- elif schema.type == "long" -%}
+    {{ encoder_ref }}.encodeLong({{ val }});
+{%- elif schema.type == "float" -%}
+    {{ encoder_ref }}.encodeFloat({{ val }});
+{%- elif schema.type == "double" -%}
+    {{ encoder_ref }}.encodeDouble({{ val }});
+{%- elif schema.type == "bytes" -%}
+    {{ encoder_ref }}.encodeBytes({{ val }});
+{%- elif schema.type == "string" -%}
+    {{ encoder_ref }}.encodeString({{ val }});
+{%- elif schema.type == "array" -%}
+    avro::encode({{ encoder_ref }}, {{ val }});
+{%- elif schema.type == "map" -%}
+    avro::encode({{ encoder_ref }}, {{ val }});
+{%- elif schema.type == "union" -%}
+{%- if schema.variants | length == 2 and schema.variants[0].type == "null" -%}
+    {{ self::render_encode_union_optional_type(schema=schema, encoder_ref=encoder_ref, val=val) }}
+{%- else %}
+    {{ self::render_encode_union_variant_type(schema=schema, encoder_ref=encoder_ref, val=val) }}
+{%- endif %}
+{%- elif schema.type == "ref" -%}
+{%- if schema.ref_type == "record" -%}
+    avro::encode({{ encoder_ref }}, *{{ val }});
+{%- else -%}
+    avro::encode({{ encoder_ref }}, {{ val }});
+{%- endif -%}
+{%- elif schema.type == "fixed" -%}
+    {{ encoder_ref }}.encodeFixed(&{{ val }}.value, {{ schema.size }});
+{%- else -%}
+    /* unknown type: {{ schema.type }} */
+{%- endif -%}
+{% endmacro -%}
+
+{% macro render_encode_union_optional_type(schema, encoder_ref, val) -%}
+if ({{ val }}) {
+    {{ self::render_encode_type(schema=schema.variants[1], encoder_ref=encoder_ref, val=[val, ".value()"] | join()) }}
+} else {
+    {{ encoder_ref }}.encodeNull();
+}
+{% endmacro -%}
+
+{% macro render_encode_union_variant_type(schema, encoder_ref, val) -%}
+{{ encoder_ref }}.encodeUnionIndex({{ val }}.index());
+switch({{ val }}.index()) {
+{%- for variant in schema.variants %}
+case {{ loop.index0 }}:
+    {{ self::render_encode_type(schema=variant, encoder_ref=encoder_ref, val=["std::get<", loop.index0, ">(", val, ")"] | join )}}
+    break;
+{%- endfor %}
+}
+{%- endmacro -%}

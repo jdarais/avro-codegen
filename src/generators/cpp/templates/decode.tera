@@ -1,0 +1,83 @@
+{% import "types.tera" as types -%}
+{% macro render_decode_type(schema, decoder_ref, val) -%}
+{# TODO: First check for logical types that use special types #}
+{%- if schema.type == "null" -%}
+    {{ decoder_ref }}.decodeNull();
+{%- elif schema.type == "boolean" -%}
+    {{ val }} = {{ decoder_ref }}.decodeBool();
+{%- elif schema.type == "int" -%}
+    {{ val }} = {{ decoder_ref }}.decodeInt();
+{%- elif schema.type == "long" -%}
+    {{ val }} = {{ decoder_ref }}.decodeLong();
+{%- elif schema.type == "float" -%}
+    {{ val }} = {{ decoder_ref }}.decodeFloat();
+{%- elif schema.type == "double" -%}
+    {{ val }} = {{ decoder_ref }}.decodeDouble();
+{%- elif schema.type == "bytes" -%}
+    {{ val }} = {{ decoder_ref }}.decodeBytes();
+{%- elif schema.type == "string" -%}
+    {{ val }} = {{ decoder_ref }}.decodeString();
+{%- elif schema.type == "array" -%}
+    avro::decode({{ decoder_ref }}, {{ val }});
+{%- elif schema.type == "map" -%}
+    avro::decode({{ decoder_ref }}, {{ val }});
+{%- elif schema.type == "union" -%}
+{%- if schema.variants | length == 2 and schema.variants[0].type == "null" -%}
+    {{ self::render_decode_union_optional_type(schema=schema, decoder_ref=decoder_ref, val=val) }}
+{%- else %}
+    {{ self::render_decode_union_variant_type(schema=schema, decoder_ref=decoder_ref, val=val) }}
+{%- endif %}
+{%- elif schema.type == "ref" -%}
+{%- if schema.ref_type == "record" -%}
+    avro::decode({{ decoder_ref }}, *{{ val }});
+{%- else -%}
+    avro::decode({{ decoder_ref }}, {{ val }});
+{%- endif -%}
+{%- elif schema.type == "fixed" -%}
+{
+    std::vector<uint8_t> vec = d.decodeFixed({{ schema.size }});
+    std::copy_n(vec.begin(), {{ schema.size }}, {{ val }}.value.begin());
+}
+{%- else -%}
+    /* unknown type: {{ schema.type }} */
+{%- endif -%}
+{% endmacro -%}
+
+{% macro render_decode_union_optional_type(schema, decoder_ref, val) -%}
+{
+    size_t index = {{ decoder_ref }}.decodeUnionIndex();
+    switch(index) {
+    case 0:
+        {{ decoder_ref }}.decodeNull();
+        break;
+    case 1:
+        {
+            {{ types::render_type(schema=schema.variants[1]) }} decoded;
+            {{ self::render_decode_type(schema=schema.variants[1], decoder_ref=decoder_ref, val="decoded") }}
+            {{ val }}.emplace(std::move(decoded));
+            break;    
+        }
+    default:
+        throw std::runtime_error("Invalid union index");
+    }
+}
+{% endmacro -%}
+
+{% macro render_decode_union_variant_type(schema, decoder_ref, val) -%}
+{
+    size_t index = {{ decoder_ref }}.decodeUnionIndex();
+    switch(index) {
+{%- for variant in schema.variants %}
+    case {{ loop.index0 }}:
+        {
+            {{ types::render_type(schema=variant) }} decoded;
+            {{ self::render_decode_type(schema=variant, decoder_ref=decoder_ref, val="decoded") }}
+            {{ val }}.emplace<{{ loop.index0 }}>(std::move(decoded));
+            break;
+        }
+{%- endfor %}
+    default:
+        throw std::runtime_error("Invalid union index");
+    }
+}
+{%- endmacro -%}

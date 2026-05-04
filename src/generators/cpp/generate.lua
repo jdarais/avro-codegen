@@ -42,13 +42,9 @@ for ns, schemas in pairs(schemas_by_namespace) do
     local incl = ref_namespaces:keys():map(header_name)
     table.sort(incl)
 
-    local record_refs = array{}
-    for ref_name, ref_schema in pairs(refs) do
-        if ref_schema.ref_type == "record" then
-            record_refs:push(ref_name)
-        end
-    end
-    table.sort(record_refs)
+    local record_ref_names = refs:keys()
+    table.sort(record_ref_names)
+    local record_refs = record_ref_names:map(function (n) return refs[n] end)
 
     local cpp_namespace = ns:gsub("[.]", "::")
 

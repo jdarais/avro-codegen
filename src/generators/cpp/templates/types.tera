@@ -19,7 +19,7 @@
 {%- elif schema.type == "array" -%}
     std::vector<{{ self::render_type(schema=schema.items) }}>
 {%- elif schema.type == "map" -%}
-    std::unordered_map<std::string, {{ self::render_type(schema=schema.values) }}>
+    std::map<std::string, {{ self::render_type(schema=schema.values) }}>
 {%- elif schema.type == "union" -%}
     {{ self::render_union_type(schema=schema) }}
 {%- elif schema.type == "ref" -%}
@@ -30,9 +30,9 @@
     {{ schema.fullname | replace(from=".", to="::") }}
 {%- endif -%}
 {%- elif schema.type == "fixed" -%}
-    uint8_t[{{ schema.size }}]
+    std::array<uint8_t, {{ schema.size }}>
 {%- else -%}
-    std::monostate /* unknown type: {{ schema.type }} */
+    /* unknown type: {{ schema.type }} */
 {%- endif -%}
 {% endmacro -%}
 

@@ -1,26 +1,35 @@
 {% import "types.tera" as types -%}
+{% import "encode.tera" as encode -%}
+{% import "decode.tera" as decode -%}
 
 #pragma once
 
 // Includes needed for types that can be used by generated code
 // The code generator may narrow down the includes to only those needed by this particular header
 // in the future
-#include <variant>
-#include <optional>
+#include <algorithm>
+#include <array>
+#include <map>
 #include <memory>
+#include <optional>
+#include <variant>
+#include <vector>
 
 #include "avro/Encoder.hh"
 #include "avro/Decoder.hh"
+#include "avro/Specific.hh"
 
 {% for incl in params.includes -%}
 #include "{{ incl }}"
 {% endfor %}
-namespace {{ params.namespace }} {
 
 // Forward declarations for record types
 {%- for record_ref in params.record_refs %}
-struct {{ record_ref | replace(from=".", to="::") }};
+namespace {{ record_ref.namespace | replace(from=".", to="::") }} { struct {{ record_ref.name | title_case }}; }
 {%- endfor %}
+
+
+namespace {{ params.namespace }} {
 
 //
 // Enum and Fixed types
@@ -30,7 +39,7 @@ struct {{ record_ref | replace(from=".", to="::") }};
 // Schema {{ schema.fullname }}
 class {{ schema.name | title_case }} {
 public:
-    enum ValueType {
+    enum ValueType: size_t {
 {%- for symbol in schema.symbols %}
         {{ symbol | const_case }},
 {%- endfor %}
@@ -49,13 +58,17 @@ public:
     std::ostream& operator<<(std::ostream& os) const;
     std::string_view to_string() const;
 
+    ValueType value() const;
+    void operator=(ValueType value);
+    void operator=(const {{ schema.name | title_case }}& other);
+
 private:
     ValueType m_value;
 };
 
 {%- elif schema.type == "fixed" %}
 // Schema {{ schema.fullname }}
-struct {{ schema.name | title_case }} { uint8_t value[{{ schema.size }}]; };
+struct {{ schema.name | title_case }} { std::array<uint8_t, {{ schema.size }}> value; };
 
 {% endif -%}
 {% endfor -%}
@@ -74,5 +87,55 @@ struct {{ schema.name | title_case }} {
 constexpr std::string_view {{ schema.name | const_case }}_SCHEMA_JSON = R"({{ schema.json }})";
 
 {% endif -%}
+{% endfor -%}
+}
+
+//
+// Encoders/Decoders
+//
+
+namespace avro {
+{% for schema in params.schemas -%}
+template<>
+struct codec_traits<{{ schema.namespace | replace(from=".", to="::") }}::{{ schema.name | title_case }}> {
+    static void encode(Encoder& e, const {{ schema.namespace | replace(from=".", to="::") }}::{{ schema.name | title_case }}& val) {
+{%- if schema.type == "enum" %}
+        e.encodeEnum(val.value());
+{%- elif schema.type == "fixed" %}
+        e.encodeFixed(val.value.data(), {{ schema.size }});
+{%- elif schema.type == "record" %}
+{%- for field in schema.fields %}
+        {{ encode::render_encode_type(schema=field.type, encoder_ref="e", val=["val.", field.name | snake_case] | join()) | indent(prefix="        ") }}
+{%- endfor %}
+{%- endif %}
+    }
+
+    static void decode(Decoder& d, {{ schema.namespace | replace(from=".", to="::") }}::{{ schema.name | title_case }}& val) {
+{%- if schema.type == "enum" %}
+        val = static_cast<{{ schema.namespace | replace(from=".", to="::") }}::{{ schema.name | title_case }}::ValueType>(d.decodeEnum());
+{%- elif schema.type == "fixed" %}
+        std::vector<uint8_t> vec = d.decodeFixed({{ schema.size }});
+        std::copy_n(vec.begin(), {{ schema.size }}, val.value.begin());
+{%- elif schema.type == "record" %}
+        if (avro::ResolvingDecoder *rd = dynamic_cast<avro::ResolvingDecoder *>(&d)) {
+            const std::vector<size_t> fo = rd->fieldOrder();
+            for (std::vector<size_t>::const_iterator it = fo.begin(); it != fo.end(); ++it) {
+                switch (*it) {
+{%- for field in schema.fields %}
+                case {{ loop.index0 }}:
+                    {{ decode::render_decode_type(schema=field.type, decoder_ref="d", val=["val.", field.name | snake_case] | join()) | indent(prefix="                    ") }}
+                    break;
+{%- endfor %}
+                }
+            }
+        } else {
+{%- for field in schema.fields %}
+            {{ decode::render_decode_type(schema=field.type, decoder_ref="d", val=["val.", field.name | snake_case] | join()) | indent(prefix="            ") }}
+{%- endfor %}
+        }
+{%- endif %}
+    }
+};
+
 {% endfor -%}
 }
