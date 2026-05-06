@@ -11,6 +11,22 @@ The code generator can be run by passing your project directory to the avro_code
 avro_codegen generate examples/rust_and_ts
 ```
 
+`avro_codegen` help output:
+
+```
+Usage: avro_codegen <COMMAND>
+
+Commands:
+  generate  Run code generation
+  show      Display information about a code generator
+  list      List available generators
+  export    Export a generator configuration (built-in or external) (NYI)
+  help      Print this message or the help of the given subcommand(s)
+
+Options:
+  -h, --help  Print help
+```
+
 ## The avro_codegen Project Directory
 
 An avro_codegen project directory contains an `avro_codegen.toml` file and any number of avro schema (.avsc) files.  For examples, see the `examples/` directory in this repository.
@@ -22,6 +38,8 @@ The `avro_codegen.toml` file supports the following properties
 - **description**: The project description
 - **include**: A list of glob patterns to search for schema files to include, (usually something like ["src/**/*.avsc"])
 - **default_generators**: A list of generators to invoke by default when no specific generator has been selected for the "generate" command
+- **generators**: A dictionary mapping generator names to custom generators.  Generators have the following properties:
+  - **path**: Path (relative to project root) to the generator
 
 ## Creating a generator
 
