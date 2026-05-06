@@ -1,6 +1,11 @@
 {% macro render_encode_type(schema, encoder_ref, val) -%}
-{# TODO: First check for logical types that use special types #}
-{%- if schema.type == "null" -%}
+{# TODO: First check for logical types that use special types -#}
+{# Note: the only non-named UUID type is string.  Fixed is handled in header.tera -#}
+{%- if schema.logical_type is defined and schema.logical_type == "uuid" -%}
+    {%- if schema.type == "string" -%}
+        {{ encoder_ref }}.encodeString(boost::uuids::to_string({{ val }}));
+    {%- endif -%}
+{%- elif schema.type == "null" -%}
     {{ encoder_ref }}.encodeNull();
 {%- elif schema.type == "boolean" -%}
     {{ encoder_ref }}.encodeBool({{ val }});
@@ -23,9 +28,9 @@
 {%- elif schema.type == "union" -%}
 {%- if schema.variants | length == 2 and schema.variants[0].type == "null" -%}
     {{ self::render_encode_union_optional_type(schema=schema, encoder_ref=encoder_ref, val=val) }}
-{%- else %}
+{%- else -%}
     {{ self::render_encode_union_variant_type(schema=schema, encoder_ref=encoder_ref, val=val) }}
-{%- endif %}
+{%- endif -%}
 {%- elif schema.type == "ref" -%}
     avro::encode({{ encoder_ref }}, {{ val }});
 {%- elif schema.type == "fixed" -%}
@@ -45,7 +50,7 @@ if ({{ val }}) {
 }
 {% endmacro -%}
 
-{% macro render_encode_union_variant_type(schema, encoder_ref, val) -%}
+{%   macro render_encode_union_variant_type(schema, encoder_ref, val) -%}
 {{ encoder_ref }}.encodeUnionIndex({{ val }}.index());
 switch({{ val }}.index()) {
 {%- for variant in schema.variants %}

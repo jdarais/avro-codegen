@@ -1,6 +1,8 @@
 {% macro render_type(schema) -%}
 {# First check for logical types that use special types #}
-{%- if schema.type == "null" -%}
+{%- if schema.logical_type is defined and schema.logical_type == "uuid" -%}
+    boost::uuids::uuid
+{%- elif schema.type == "null" -%}
     std::monostate
 {%- elif schema.type == "boolean" -%}
     bool

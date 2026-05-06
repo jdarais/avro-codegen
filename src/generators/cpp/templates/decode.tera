@@ -1,7 +1,10 @@
 {% import "types.tera" as types -%}
 {% macro render_decode_type(schema, decoder_ref, val) -%}
-{# TODO: First check for logical types that use special types #}
-{%- if schema.type == "null" -%}
+{# TODO: First check for logical types that use special types -#}
+{# Note: the only non-named UUID type is string.  Fixed is handled in header.tera -#}
+{%- if schema.logical_type is defined and schema.logical_type == "uuid" -%}
+    {{ val }} = boost::lexical_cast<boost::uuids::uuid>({{ decoder_ref }}.decodeString());
+{%- elif schema.type == "null" -%}
     {{ decoder_ref }}.decodeNull();
 {%- elif schema.type == "boolean" -%}
     {{ val }} = {{ decoder_ref }}.decodeBool();
@@ -24,9 +27,9 @@
 {%- elif schema.type == "union" -%}
 {%- if schema.variants | length == 2 and schema.variants[0].type == "null" -%}
     {{ self::render_decode_union_optional_type(schema=schema, decoder_ref=decoder_ref, val=val) }}
-{%- else %}
+{%- else -%}
     {{ self::render_decode_union_variant_type(schema=schema, decoder_ref=decoder_ref, val=val) }}
-{%- endif %}
+{%- endif -%}
 {%- elif schema.type == "ref" -%}
     avro::decode({{ decoder_ref }}, {{ val }});
 {%- elif schema.type == "fixed" -%}

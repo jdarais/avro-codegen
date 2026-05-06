@@ -19,6 +19,10 @@
 #include "avro/Decoder.hh"
 #include "avro/Specific.hh"
 
+#include "boost/uuid/uuid.hpp"
+#include "boost/uuid/uuid_io.hpp"
+#include "boost/lexical_cast.hpp"
+
 {% for incl in params.includes -%}
 #include "{{ incl }}"
 {% endfor %}
@@ -56,7 +60,7 @@ public:
     static {{ schema.name | title_case }} from_string(std::string_view s) {
 {%- for symbol in schema.symbols %}
         {% if not loop.first %}else {% endif %}if (s == "{{ symbol }}") { return {{ schema.name | title_case }}({{ symbol | const_case }}); }
-{% endfor %}
+{%- endfor %}
         else { throw std::runtime_error("Unknown enum value name: " + std::string(s)); }
     }
 
@@ -82,7 +86,12 @@ private:
 
 {%- elif schema.type == "fixed" %}
 // Schema {{ schema.fullname }}
+{%- if schema.logical_type is defined and schema.logical_type == "uuid" %}
+struct {{ schema.name | title_case }} { boost::uuids::uuid value; };
+{%- else %}
 struct {{ schema.name | title_case }} { std::array<uint8_t, {{ schema.size }}> value; };
+{%- endif %}
+constexpr std::string_view {{ schema.name | const_case }}_SCHEMA_JSON = R"({{ schema.json }})";
 
 {% endif -%}
 {% endfor -%}
@@ -116,7 +125,11 @@ struct codec_traits<{{ schema.namespace | replace(from=".", to="::") }}::{{ sche
 {%- if schema.type == "enum" %}
         e.encodeEnum(val.value());
 {%- elif schema.type == "fixed" %}
+{%- if schema.logical_type is defined and schema.logical_type == "uuid" %}
+        e.encodeFixed(val.value.data(), val.value.size());
+{%- else %}
         e.encodeFixed(val.value.data(), {{ schema.size }});
+{%- endif %}
 {%- elif schema.type == "record" %}
 {%- for field in schema.fields %}
         {{ encode::render_encode_type(schema=field.type, encoder_ref="e", val=["val.", field.name | snake_case] | join()) | indent(prefix="        ") }}
@@ -128,8 +141,13 @@ struct codec_traits<{{ schema.namespace | replace(from=".", to="::") }}::{{ sche
 {%- if schema.type == "enum" %}
         val = static_cast<{{ schema.namespace | replace(from=".", to="::") }}::{{ schema.name | title_case }}::ValueType>(d.decodeEnum());
 {%- elif schema.type == "fixed" %}
+{%- if schema.logical_type is defined and schema.logical_type == "uuid" %}
+        std::vector<uint8_t> vec = d.decodeFixed({{ schema.size }});
+        std::copy(vec.cbegin(), vec.cend(), val.value.begin());
+{%- else %}
         std::vector<uint8_t> vec = d.decodeFixed({{ schema.size }});
         std::copy_n(vec.begin(), {{ schema.size }}, val.value.begin());
+{%- endif %}
 {%- elif schema.type == "record" %}
         if (avro::ResolvingDecoder *rd = dynamic_cast<avro::ResolvingDecoder *>(&d)) {
             const std::vector<size_t> fo = rd->fieldOrder();
