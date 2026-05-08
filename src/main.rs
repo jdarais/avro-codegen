@@ -21,6 +21,7 @@ use crate::generator::{Generator, INTERNAL_GENERATOR_NAMES, get_generator};
 use crate::lua_env::{create_lua_env, GeneratorContext};
 
 #[derive(Parser)]
+#[command(version)]
 struct Cli {
     #[command(subcommand)]
     command: Command,

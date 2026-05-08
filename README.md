@@ -20,11 +20,12 @@ Commands:
   generate  Run code generation
   show      Display information about a code generator
   list      List available generators
-  export    Export a generator configuration (built-in or external) (NYI)
+  export    Export a generator configuration (built-in or external)
   help      Print this message or the help of the given subcommand(s)
 
 Options:
-  -h, --help  Print help
+  -h, --help     Print help
+  -V, --version  Print version
 ```
 
 ## The avro_codegen Project Directory
