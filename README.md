@@ -152,3 +152,11 @@ The tera environment is augmented with the following filters:
 - `camel_case`
 - `const_case`
 
+## License
+
+With the exception of the content of the `examples` and `src/generators` directories, this project is licensed under the `GPL-3.0` license.
+
+The content of the `examples` and `src/generators` directories can be copied, re-used, and modified without restriction.
+
+
+
