@@ -190,6 +190,7 @@ pub fn schema_to_json(
                     "aliases": enum_schema.aliases,
                     "namespace": enum_schema.name.namespace.as_ref().cloned().unwrap_or_else(String::new),
                     "fullname": enum_schema.name.fullname(None),
+                    "file_path": schema_info.file_path,
                     "doc": enum_schema.doc,
                     "symbols": enum_schema.symbols,
                     "default": enum_schema.default,
@@ -213,6 +214,7 @@ pub fn schema_to_json(
                     "aliases": fixed_schema.aliases,
                     "namespace": fixed_schema.name.namespace.as_ref().cloned().unwrap_or_else(String::new),
                     "fullname": fixed_schema.name.fullname(None),
+                    "file_path": schema_info.file_path,
                     "size": fixed_schema.size,
                     "json": schema_json
                 }))
@@ -364,6 +366,7 @@ pub fn schema_to_json(
                     "name": fixed.name.name,
                     "namespace": fixed.name.namespace.as_ref().cloned().unwrap_or_else(String::new),
                     "fullname": fixed.name.fullname(None),
+                    "file_path": schema_info.file_path,
                     "size": 12,
                     "json": schema_json,
                 }))

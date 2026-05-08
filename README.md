@@ -116,6 +116,45 @@ Package properties include:
 - `version` - The package version
 - `description` - The package description
 
+### Examples Generator Input
+
+```json
+{
+  "schemas": [
+    {
+      "aliases": null,
+      "doc": null,
+      "fields": [
+        {
+          "name": "x",
+          "type": { "json": "\"float\"", "type": "float" }
+        },
+        {
+          "name": "y",
+          "type": { "json": "\"float\"", "type": "float" }
+        }
+      ],
+      "file_path": "src/record_with_namespace.avsc",
+      "fullname": "org.testorg.InternallyDefinedRecord",
+      "json": "{\"type\":\"record\",\"namespace\":\"org.testorg\",\"name\":\"InternallyDefinedRecord\",\"fields\":[{\"name\":\"x\",\"type\":\"float\"},{\"name\":\"y\",\"type\":\"float\"}]}",
+      "name": "InternallyDefinedRecord",
+      "namespace": "org.testorg",
+      "type": "record"
+    },
+  ],
+  "package": {
+    "name": "rust_and_ts",
+    "version": "0.1.0",
+    "description": "An exmaple project that generates some basic types for rust and typescript"
+  },
+  "params": {
+    "cargo_toml": true
+  }
+}
+```
+
+Note that the structure of the schema passed to the generator follows a slightly different schema from what is in the Avro specification.  This is to provide the needed information to the generator while keeping the structure of the schema data consistent for easier consumption by the generator and its templates.
+
 ### Generator Lua Environment
 
 To render a template, the `generate.lua` script calls the `render` function, which is available as a global in the lua environment:
