@@ -57,17 +57,6 @@ enum Command {
         #[arg(short, long, default_value = ".")]
         project_dir: Arc<str>,
     },
-
-    /// Export a generator configuration (built-in or external)
-    Export {
-        /// Output directory
-        #[arg(short, long)]
-        output: Arc<str>,
-
-        /// Generator name to export
-        #[arg()]
-        generator: Arc<str>,
-    },
 }
 
 fn collect_schemas(
@@ -376,9 +365,5 @@ fn main() {
             }
 
         }
-        Command::Export {
-            output: _,
-            generator: _,
-        } => {}
     };
 }

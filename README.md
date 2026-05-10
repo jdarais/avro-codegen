@@ -5,13 +5,13 @@ This is alpha/experimental software
 
 ## Using the avro_codegen CLI
 
-The code generator can be run by passing your project directory to the avro_codegen CLI. For example, to run code generation for the `rust_and_ts` example project in this repository, you can run:
+The code generator can be run by passing your project directory to the avro_codegen CLI. For example, to run code generation for the `rust_and_ts` example project in this repository, run:
 
 ```sh
 avro_codegen generate examples/rust_and_ts
 ```
 
-`avro_codegen` help output:
+Output of `avro_codegen --help`:
 
 ```
 Usage: avro_codegen <COMMAND>
@@ -20,7 +20,6 @@ Commands:
   generate  Run code generation
   show      Display information about a code generator
   list      List available generators
-  export    Export a generator configuration (built-in or external)
   help      Print this message or the help of the given subcommand(s)
 
 Options:
