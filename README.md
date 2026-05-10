@@ -49,6 +49,8 @@ A generator contains:
 - A `generator.lua` script that invokes templates to render code (or other) files
 - A `templates/` direcotry containing a collection of tera templates that can be invoked by the generator script
 
+Examples can be found in `src/generators`
+
 ### Variables Passed to Generators
 
 Avro_codegen sets the following global variables when invoking the generator's `generate.lua` script:
