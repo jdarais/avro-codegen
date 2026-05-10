@@ -27,6 +27,14 @@ Options:
   -V, --version  Print version
 ```
 
+## Built-in Generators
+
+The following generators come built-in with avro-codegen:
+
+- Rust
+- TypeScript
+- C++
+
 ## The avro_codegen Project Directory
 
 An avro_codegen project directory contains an `avro_codegen.toml` file and any number of avro schema (.avsc) files.  For examples, see the `examples/` directory in this repository.
