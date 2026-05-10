@@ -1,5 +1,5 @@
 # avro-codegen
-Universal code generator for avro schemas
+Avro-codegen is a universal code generator for avro schemas.  It allows you to generate data structures in various programming languages that can be used for convenient serialization / deserialization and that can be checked by the compiler or type checker at build-time.  Avro-codegen comes with built-in generators, and also makes it easy to create a custom generator if the available built-in generators don't meet your needs.  Generators are written in a combination of [Lua](https://lua.org) script and [Tera](https://keats.github.io/tera/docs/) templates.
 
 This is alpha/experimental software
 
