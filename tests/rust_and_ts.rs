@@ -1,3 +1,8 @@
+// Avro-Codegen
+// Copyright (C) 2026 Jeremiah Darais
+//
+// This program is licensed under the GPLv3.0 license (https://github.com/jdarais/cobble/blob/main/COPYING)
+
 use assert_cmd::cargo::cargo_bin_cmd; // Import cargo_bin_cmd! macro and methods
 use std::path::Path;
 use std::fs;

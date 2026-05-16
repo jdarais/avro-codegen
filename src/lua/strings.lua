@@ -1,3 +1,8 @@
+-- Avro-Codegen
+-- Copyright (C) 2026 Jeremiah Darais
+--
+-- This program is licensed under the GPLv3.0 license (https://github.com/jdarais/cobble/blob/main/COPYING)
+
 local function get_next_word_from_reversed(reversed, start_from)
     local next_word, after_index = reversed:match("^([a-z]+[A-Z]?)()", start_from)
     if next_word then

@@ -1,3 +1,8 @@
+// Avro-Codegen
+// Copyright (C) 2026 Jeremiah Darais
+//
+// This program is licensed under the GPLv3.0 license (https://github.com/jdarais/cobble/blob/main/COPYING)
+
 use std::fs::create_dir_all;
 use std::path::PathBuf;
 use std::sync::Arc;
