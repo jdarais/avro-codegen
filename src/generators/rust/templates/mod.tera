@@ -16,6 +16,8 @@ pub mod {{ mod }};
 {% macro render_record_field(name, schema) -%}
 {% if schema.logical_type is defined and schema.logical_type == "duration" -%}
 {# #}    #[serde(with="crate::_io::duration_serde")]
+{% elif schema.logical_type is defined and schema.logical_type == "big-decimal" -%}
+{# #}    #[serde(with="apache_avro::serde::bigdecimal")]
 {% elif schema.logical_type is not defined and schema.type == "bytes" or schema.type == "fixed" -%}
 {# #}    #[serde(with="serde_bytes")]
 {% endif -%}
@@ -36,8 +38,11 @@ pub struct {{ schema.name }} {
 }
 {% elif schema.type == "fixed" -%}
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[serde(transparent)]
 pub struct {{ schema.name }}(
-{% if schema.logical_type is not defined -%}
+{% if schema.logical_type is defined and schema.logical_type == "duration" -%}
+{# #}    #[serde(with="crate::_io::duration_serde")]
+{% elif schema.logical_type is not defined -%}
 {# #}    #[serde(with="serde_bytes")]
 {% endif -%}
 {# #}    pub {{ types::render_type(schema=schema) }}

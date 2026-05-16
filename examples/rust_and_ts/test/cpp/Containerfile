@@ -1,0 +1,28 @@
+#
+# Container image that encapsulates the dependencies for building the test for the cpp generator
+#
+ARG AVRO_VERSION=1.12.0
+
+FROM ubuntu:25.10
+ARG AVRO_VERSION
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        build-essential \
+        ca-certificates \
+        cmake \
+        git \
+        libboost-all-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+ADD "https://dlcdn.apache.org/avro/avro-${AVRO_VERSION}/avro-src-${AVRO_VERSION}.tar.gz" /avro-build/
+WORKDIR /avro-build
+RUN tar xvzf *.tar.gz && rm -rf *.tar.gz
+
+RUN cmake -S "avro-src-${AVRO_VERSION}/lang/c++" -B build \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr/local && \
+    cmake --build build --parallel "$(nproc)" && \
+    cmake --install build
+
+WORKDIR /build

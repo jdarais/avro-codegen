@@ -17,7 +17,9 @@ pub struct TypedReader<'a, R: Read, T: de::DeserializeOwned> {
 impl <'a, R: Read, T: de::DeserializeOwned> TypedReader<'a, R, T> {
     pub fn new(schema: &'a Schema, input: R) -> AvroResult<TypedReader<'a, R, T>> {
         Ok(TypedReader {
-            reader: Reader::with_schema(schema, input)?,
+            reader: Reader::builder(input)
+                .reader_schema(schema)
+                .build()?,
             read_type: PhantomData
         })
     }
@@ -30,7 +32,9 @@ impl <'a, R: Read, T: de::DeserializeOwned> TypedReader<'a, R, T> {
 impl <'a, R: Read, T: de::DeserializeOwned + AvroSchemaRef<'a>> TypedReader<'a, R, T> {
     pub fn from_type(input: R) -> AvroResult<TypedReader<'a, R, T>> {
         Ok(TypedReader {
-            reader: Reader::with_schema(T::get_schema_ref(), input)?,
+            reader: Reader::builder(input)
+                .reader_schema(T::get_schema_ref())
+                .build()?,
             read_type: PhantomData
         })
     }

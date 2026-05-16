@@ -1,3 +1,8 @@
+// Avro-Codegen
+// Copyright (C) 2026 Jeremiah Darais
+//
+// This program is licensed under the GPLv3.0 license (https://github.com/jdarais/avro-codegen/blob/main/COPYING)]
+
 use anyhow::anyhow;
 use apache_avro::schema::{InnerDecimalSchema, RecordField, Schema, UnionSchema, UuidSchema};
 use serde::Serialize;

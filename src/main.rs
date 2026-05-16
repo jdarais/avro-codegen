@@ -5,7 +5,7 @@ mod lua_env;
 mod tera_env;
 
 use std::collections::{BTreeMap, HashMap};
-use std::env::set_current_dir;
+use std::env::{set_current_dir, current_dir};
 use std::fs::{remove_dir_all, File};
 use std::io::Read;
 use std::path::{Path, PathBuf, MAIN_SEPARATOR_STR};
@@ -38,6 +38,10 @@ enum Command {
         /// Schema project directory to process
         #[arg(short, long, default_value = ".")]
         project_dir: Arc<str>,
+
+        /// Generator to use. Can be specified multiple times
+        #[arg(short, long)]
+        generator: Vec<Arc<str>>
     },
 
     /// Display information about a code generator
@@ -177,10 +181,11 @@ fn main() {
         Command::Generate {
             output,
             project_dir,
+            generator
         } => {
             let canonical_project_dir = Path::new(project_dir.as_ref()).canonicalize().unwrap();
             set_current_dir(&canonical_project_dir).unwrap();
-            let cfg = config::read_from_toml(&Path::new(".")).unwrap();
+            let cfg = config::read_from_toml(&current_dir().unwrap()).unwrap();
             let mut schema_paths: Vec<PathBuf> = Vec::new();
             let mut schema_strings: Vec<String> = Vec::new();
             for include_path in cfg.include.iter() {
@@ -245,8 +250,10 @@ fn main() {
             }
             let all_schemas_json = all_schemas_json;
 
+            let generator_names = if generator.is_empty() { cfg.default_generators.clone() } else { generator };
+
             let mut generators: Vec<(Arc<str>, Arc<Generator>)> = Vec::new();
-            for gen_name in cfg.default_generators.iter() {
+            for gen_name in generator_names.iter() {
                 let generator = get_generator(gen_name, &cfg.generator_configs).unwrap();
                 generators.push((gen_name.clone(), Arc::new(generator)));
             }
@@ -309,7 +316,7 @@ fn main() {
         Command::Show { generator, project_dir } => {
             let canonical_project_dir = Path::new(project_dir.as_ref()).canonicalize().unwrap();
             set_current_dir(&canonical_project_dir).unwrap();
-            let cfg_res = config::read_from_toml(&Path::new("."));
+            let cfg_res = config::read_from_toml(&current_dir().unwrap());
 
             let no_generator_configs: HashMap<Arc<str>, GeneratorConfig> = HashMap::new();
             let generator_configs = match cfg_res {
@@ -344,7 +351,7 @@ fn main() {
         Command::List { project_dir} => {
             let canonical_project_dir = Path::new(project_dir.as_ref()).canonicalize().unwrap();
             set_current_dir(&canonical_project_dir).unwrap();
-            let cfg_res = config::read_from_toml(&Path::new("."));
+            let cfg_res = config::read_from_toml(&current_dir().unwrap());
 
             let mut generator_names: Vec<Arc<str>> = match cfg_res {
                 Ok(cfg) => cfg.generator_configs.keys().cloned().collect(),

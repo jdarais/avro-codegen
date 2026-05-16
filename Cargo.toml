@@ -18,6 +18,10 @@ tar = "0.4.43"
 tera = "1.20.0"
 toml = "0.8.19"
 
+[dev-dependencies]
+assert_cmd = "2.1.2"
+tempfile = "3.27.0"
+
 [build-dependencies]
 flate2 = "1.0.35"
 tar = "0.4.43"

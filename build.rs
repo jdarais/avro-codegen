@@ -35,7 +35,6 @@ fn main() {
 
         let mut file_paths: Vec<PathBuf> = Vec::new();
         build_file_list(&generator_dir.path(), Path::new(""), &mut file_paths).unwrap();
-        println!("cargo::warning=files:{:?}", file_paths);
 
         let mut archive_filename = OsString::from(generator_dir.file_name());
         archive_filename.push(".tgz");
