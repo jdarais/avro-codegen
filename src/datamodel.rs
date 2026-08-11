@@ -151,8 +151,8 @@ pub fn schema_to_json(
             if record_schema.name.fullname(None) != schema_info.full_name {
                 Ok(json!({
                     "type": "ref",
-                    "name": record_schema.name.name,
-                    "namespace": record_schema.name.namespace.as_ref().cloned().unwrap_or_else(String::new),
+                    "name": record_schema.name.name(),
+                    "namespace": record_schema.name.namespace().map(str::to_string).unwrap_or_else(String::new),
                     "fullname": record_schema.name.fullname(None),
                     "ref_type": "record",
                 }))
@@ -168,9 +168,9 @@ pub fn schema_to_json(
 
                 Ok(json!({
                     "type": "record",
-                    "name": record_schema.name.name,
+                    "name": record_schema.name.name(),
                     "aliases": record_schema.aliases,
-                    "namespace": record_schema.name.namespace.as_ref().cloned().unwrap_or_else(String::new),
+                    "namespace": record_schema.name.namespace().map(str::to_string).unwrap_or_else(String::new),
                     "fullname": schema_info.full_name,
                     "doc": record_schema.doc,
                     "file_path": schema_info.file_path,
@@ -183,17 +183,17 @@ pub fn schema_to_json(
             if enum_schema.name.fullname(None) != schema_info.full_name {
                 Ok(json!({
                     "type": "ref",
-                    "name": enum_schema.name.name,
-                    "namespace": enum_schema.name.namespace.as_ref().cloned().unwrap_or_else(String::new),
+                    "name": enum_schema.name.name(),
+                    "namespace": enum_schema.name.namespace().map(str::to_string).unwrap_or_else(String::new),
                     "fullname": enum_schema.name.fullname(None),
                     "ref_type": "enum",
                 }))
             } else {
                 Ok(json!({
                     "type": "enum",
-                    "name": enum_schema.name.name,
+                    "name": enum_schema.name.name(),
                     "aliases": enum_schema.aliases,
-                    "namespace": enum_schema.name.namespace.as_ref().cloned().unwrap_or_else(String::new),
+                    "namespace": enum_schema.name.namespace().map(str::to_string).unwrap_or_else(String::new),
                     "fullname": enum_schema.name.fullname(None),
                     "file_path": schema_info.file_path,
                     "doc": enum_schema.doc,
@@ -207,17 +207,17 @@ pub fn schema_to_json(
             if fixed_schema.name.fullname(None) != schema_info.full_name {
                 Ok(json!({
                     "type": "ref",
-                    "name": fixed_schema.name.name,
-                    "namespace": fixed_schema.name.namespace.as_ref().cloned().unwrap_or_else(String::new),
+                    "name": fixed_schema.name.name(),
+                    "namespace": fixed_schema.name.namespace().map(str::to_string).unwrap_or_else(String::new),
                     "fullname": fixed_schema.name.fullname(None),
                     "ref_type": "fixed",
                 }))
             } else {
                 Ok(json!({
                     "type": "fixed",
-                    "name": fixed_schema.name.name,
+                    "name": fixed_schema.name.name(),
                     "aliases": fixed_schema.aliases,
-                    "namespace": fixed_schema.name.namespace.as_ref().cloned().unwrap_or_else(String::new),
+                    "namespace": fixed_schema.name.namespace().map(str::to_string).unwrap_or_else(String::new),
                     "fullname": fixed_schema.name.fullname(None),
                     "file_path": schema_info.file_path,
                     "size": fixed_schema.size,
@@ -359,8 +359,8 @@ pub fn schema_to_json(
             if fixed.name.fullname(None) != schema_info.full_name {
                 Ok(json!({
                     "type": "ref",
-                    "name": fixed.name.name,
-                    "namespace": fixed.name.namespace.as_ref().cloned().unwrap_or_else(String::new),
+                    "name": fixed.name.name(),
+                    "namespace": fixed.name.namespace().map(str::to_string).unwrap_or_else(String::new),
                     "fullname": fixed.name.fullname(None),
                     "ref_type": "fixed",
                 }))
@@ -368,8 +368,8 @@ pub fn schema_to_json(
                 Ok(json!({
                     "type": "fixed",
                     "logical_type": "duration",
-                    "name": fixed.name.name,
-                    "namespace": fixed.name.namespace.as_ref().cloned().unwrap_or_else(String::new),
+                    "name": fixed.name.name(),
+                    "namespace": fixed.name.namespace().map(str::to_string).unwrap_or_else(String::new),
                     "fullname": fixed.name.fullname(None),
                     "file_path": schema_info.file_path,
                     "size": 12,
@@ -380,8 +380,8 @@ pub fn schema_to_json(
         Schema::Ref { name } => {
             Ok(json!({
                 "type": "ref",
-                "name": name.name,
-                "namespace": name.namespace.as_ref().cloned().unwrap_or_else(String::new),
+                "name": name.name(),
+                "namespace": name.namespace().map(str::to_string).unwrap_or_else(String::new),
                 "fullname": name.fullname(None),
                 "ref_type": get_ref_type(name, schemata),
             }))

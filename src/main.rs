@@ -79,12 +79,11 @@ fn collect_schemas(
             schema_collection.insert(
                 fullname.clone(),
                 SchemaInfo {
-                    name: sch.name.name.clone(),
+                    name: sch.name.name().to_string(),
                     namespace: sch
                         .name
-                        .namespace
-                        .as_ref()
-                        .map(String::clone)
+                        .namespace()
+                        .map(str::to_string)
                         .unwrap_or_else(String::new),
                     full_name: fullname,
                     file_path: schema_info.file_path.clone(),
@@ -97,12 +96,11 @@ fn collect_schemas(
             schema_collection.insert(
                 fullname.clone(),
                 SchemaInfo {
-                    name: sch.name.name.clone(),
+                    name: sch.name.name().to_string(),
                     namespace: sch
                         .name
-                        .namespace
-                        .as_ref()
-                        .map(String::clone)
+                        .namespace()
+                        .map(str::to_string)
                         .unwrap_or_else(String::new),
                     full_name: fullname,
                     file_path: schema_info.file_path.clone(),
@@ -120,12 +118,11 @@ fn collect_schemas(
             schema_collection.insert(
                 fullname.clone(),
                 SchemaInfo {
-                    name: fixed.name.name.clone(),
+                    name: fixed.name.name().to_string(),
                     namespace: fixed
                         .name
-                        .namespace
-                        .as_ref()
-                        .cloned()
+                        .namespace()
+                        .map(str::to_string)
                         .unwrap_or_else(String::new),
                     full_name: fullname,
                     file_path: schema_info.file_path.clone(),
@@ -143,12 +140,11 @@ fn collect_schemas(
             schema_collection.insert(
                 fullname.clone(),
                 SchemaInfo {
-                    name: sch.name.name.clone(),
+                    name: sch.name.name().to_string(),
                     namespace: sch
                         .name
-                        .namespace
-                        .as_ref()
-                        .map(String::clone)
+                        .namespace()
+                        .map(str::to_string)
                         .unwrap_or_else(String::new),
                     full_name: fullname,
                     file_path: schema_info.file_path.clone(),
@@ -165,8 +161,8 @@ fn collect_schemas(
                 schema_collection.insert(
                     fullname.clone(),
                     SchemaInfo {
-                        name: fixed_sch.name.name.clone(),
-                        namespace: fixed_sch.name.namespace.as_ref().map(String::clone).unwrap_or_else(String::new),
+                        name: fixed_sch.name.name().to_string(),
+                        namespace: fixed_sch.name.namespace().map(str::to_string).unwrap_or_else(String::new),
                         full_name: fullname,
                         file_path: schema_info.file_path.clone(),
                         schema: schema.clone()
@@ -217,7 +213,7 @@ fn main() {
             let schemas = Schema::parse_list(&schema_strs[..]).unwrap();
             let mut schema_infos: Vec<SchemaInfo> = Vec::new();
             for (path, schema) in schema_paths.iter().zip(schemas.iter()) {
-                let name = schema.name().map(|n| n.name.clone());
+                let name = schema.name().map(|n| n.name().to_string());
                 let namespace = schema.namespace();
                 let full_name = match &name {
                     Some(nm) => match &namespace {
@@ -235,7 +231,7 @@ fn main() {
 
                 schema_infos.push(SchemaInfo {
                     name: name.unwrap_or_else(|| String::new()),
-                    namespace: namespace.unwrap_or_else(|| String::new()),
+                    namespace: namespace.map(str::to_string).unwrap_or_else(|| String::new()),
                     full_name: full_name.unwrap_or_else(|| String::new()),
                     // TODO: Always provide unix-style path regardless fo platform
                     file_path: String::from(path.as_os_str().to_str().unwrap())
