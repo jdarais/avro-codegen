@@ -1,4 +1,4 @@
-{% import "types.tera" as types -%}
+{% import "types.jinja" as types -%}
 
 {% if params.schemas | length > 0 -%}
 use std::io::{Read, Write};
@@ -24,8 +24,8 @@ pub mod {{ mod }};
 {% if name != name | snake_case -%}
 {# #}    #[serde(rename="{{ name }}")]
 {% endif -%}
-{# #}    pub {{ name | snake_case }}: {{ types::render_type(schema=schema) }},
-{% endmacro render_record_field -%}
+{# #}    pub {{ name | snake_case }}: {{ types.render_type(schema=schema) }},
+{% endmacro -%}
 
 
 {% for schema in params.schemas -%}
@@ -33,7 +33,7 @@ pub mod {{ mod }};
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct {{ schema.name }} {
 {% for field in schema.fields -%}
-    {{ self::render_record_field(name=field.name, schema=field.type) -}}
+    {{ render_record_field(name=field.name, schema=field.type) -}}
 {% endfor -%}
 }
 {% elif schema.type == "fixed" -%}
@@ -45,7 +45,7 @@ pub struct {{ schema.name }}(
 {% elif schema.logical_type is not defined -%}
 {# #}    #[serde(with="serde_bytes")]
 {% endif -%}
-{# #}    pub {{ types::render_type(schema=schema) }}
+{# #}    pub {{ types.render_type(schema=schema) }}
 );
 {% elif schema.type == "enum" -%}
 #[derive(Serialize, Deserialize, Debug, PartialEq)]

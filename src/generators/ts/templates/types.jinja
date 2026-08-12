@@ -36,20 +36,20 @@
 {%- elif schema.type == "string" -%}
     string
 {%- elif schema.type == "array" -%}
-    Array<{{ self::render_type(schema=schema.items, from_namespace=from_namespace) }}>
+    Array<{{ render_type(schema=schema.items, from_namespace=from_namespace) }}>
 {%- elif schema.type == "map" -%}
-    { [key: string]: {{ self::render_type(schema=schema.values, from_namespace=from_namespace) }} }
+    { [key: string]: {{ render_type(schema=schema.values, from_namespace=from_namespace) }} }
 {%- elif schema.type == "union" -%}
     {%- for variant in schema.variants -%}
         {%- if variant.type == "null" -%}
             null
         {%- else -%}
-            { {{ variant.type }}: {{ self::render_type(schema=variant, from_namespace=from_namespace) }} }
+            { {{ variant.type }}: {{ render_type(schema=variant, from_namespace=from_namespace) }} }
         {%- endif -%}
         {%- if not loop.last %} | {% endif -%}
     {%- endfor -%}
 {%- elif schema.type == "ref" -%}
-    {% if schema.namespace != "" and schema.namespace != from_namespace %}{{ schema.namespace | replace(from=".", to="_") }}_{% endif %}{{ schema.name | title_case }}
+    {% if schema.namespace != "" and schema.namespace != from_namespace %}{{ schema.namespace | replace(".", "_") }}_{% endif %}{{ schema.name | title_case }}
 {%- elif schema.type == "fixed" -%}
     Buffer
 {%- else -%}

@@ -69,11 +69,10 @@ fn render(
         serde_json::Value::Object(combined_params),
     );
 
-    let tera = generator_context.generator.tera.lock().unwrap();
-    let context = tera::Context::from_value(serde_json::Value::Object(context_map))
-        .map_err(|e| mlua::Error::runtime(format!("{e}")))?;
-    let rendered = (&*tera)
-        .render(template, &context)
+    let env = generator_context.generator.env.lock().unwrap();
+    let tmpl = env.get_template(template).map_err(|e| mlua::Error::runtime(format!("{e:?}")))?;
+    let rendered = tmpl
+        .render(&context_map)
         .map_err(|e| mlua::Error::runtime(format!("{e:?}")))?;
 
     let output_file = generator_context.output_dir.join(output);

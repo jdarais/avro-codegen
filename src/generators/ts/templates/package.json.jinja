@@ -10,7 +10,7 @@
 {%- if namespace | length == 0 %}
     ".": "./dist/types.mjs",
 {%- else %}
-    "./{{ namespace | replace(from=".", to="/") }}": "./dist/{{ namespace | replace(from=".", to="/")}}/types.mjs",
+    "./{{ namespace | replace(".", "/") }}": "./dist/{{ namespace | replace(".", "/")}}/types.mjs",
 {%- endif %}
 {%- endfor %}
     "./_io": "./dist/_io.mjs"

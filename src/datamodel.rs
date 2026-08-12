@@ -75,15 +75,23 @@ pub fn denormalize_schema(schema: &Schema, schemata: &[Schema]) -> anyhow::Resul
 }
 
 fn get_ref_type(name: &apache_avro::schema::Name, schemata: &[Schema]) -> &'static str {
-    let ref_schema = schemata.iter().find(|&s| s.name().map(|n| n == name).unwrap_or(false));
+    let ref_schema = schemata
+        .iter()
+        .find(|&s| s.name().map(|n| n == name).unwrap_or(false));
     match ref_schema {
         Some(Schema::Record(_)) => "record",
         Some(Schema::Enum(_)) => "enum",
         Some(Schema::Fixed(_)) => "fixed",
         Some(Schema::Decimal(_)) => "fixed",
-        Some(Schema::Ref{name}) => get_ref_type(name, schemata),
-        Some(x) => panic!("Tried to follow named reference, but got an unnamed type: {:?}", x),
-        None => panic!("Tried to follow reference for {}, but schema was not found", name),
+        Some(Schema::Ref { name }) => get_ref_type(name, schemata),
+        Some(x) => panic!(
+            "Tried to follow named reference, but got an unnamed type: {:?}",
+            x
+        ),
+        None => panic!(
+            "Tried to follow reference for {}, but schema was not found",
+            name
+        ),
     }
 }
 
@@ -266,9 +274,7 @@ pub fn schema_to_json(
                         }
                     }
                 }
-                _ => {
-                    panic!("Expected schema_to_json to return a json object");
-                }
+                _ => panic!("Expected schema_to_json to return a json object"),
             }
         }
         Schema::BigDecimal => Ok(json!({
@@ -304,9 +310,7 @@ pub fn schema_to_json(
                             }
                         }
                     }
-                    _ => {
-                        panic!("Expected schema_to_json to return an object");
-                    }
+                    _ => panic!("Expected schema_to_json to return an object"),
                 }
             }
         },
@@ -377,14 +381,12 @@ pub fn schema_to_json(
                 }))
             }
         }
-        Schema::Ref { name } => {
-            Ok(json!({
-                "type": "ref",
-                "name": name.name(),
-                "namespace": name.namespace().map(str::to_string).unwrap_or_else(String::new),
-                "fullname": name.fullname(None),
-                "ref_type": get_ref_type(name, schemata),
-            }))
-        },
+        Schema::Ref { name } => Ok(json!({
+            "type": "ref",
+            "name": name.name(),
+            "namespace": name.namespace().map(str::to_string).unwrap_or_else(String::new),
+            "fullname": name.fullname(None),
+            "ref_type": get_ref_type(name, schemata),
+        })),
     }
 }

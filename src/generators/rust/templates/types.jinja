@@ -25,13 +25,13 @@
 {%- elif schema.type == "string" -%}
     String
 {%- elif schema.type == "array" -%}
-    Vec<{{ self::render_type(schema=schema.items) }}>
+    Vec<{{ render_type(schema=schema.items) }}>
 {%- elif schema.type == "map" -%}
-    std::collections::HashMap<String, {{ self::render_type(schema=schema.values) }}>
+    std::collections::HashMap<String, {{ render_type(schema=schema.values) }}>
 {%- elif schema.type == "union" -%}
-    {{ self::render_union_type(schema=schema) }}
+    {{ render_union_type(schema=schema) }}
 {%- elif schema.type == "ref" -%}
-    crate::{{ schema.fullname | replace(from=".", to="::") }}
+    crate::{{ schema.fullname | replace(".", "::") }}
 {%- elif schema.type == "fixed" -%}
     [u8;{{ schema.size }}]
 {%- else -%}
@@ -40,19 +40,19 @@
 {% endmacro -%}
 
 {% macro render_generic_union_type(schema) -%}
-crate::_unions::Union{{ schema.variants | length }}<{% for variant in schema.variants %}{{ self::render_type(schema=variant) }}{% if not loop.last %}, {% endif %}{% endfor %}>
+crate::_unions::Union{{ schema.variants | length }}<{% for variant in schema.variants %}{{ render_type(schema=variant) }}{% if not loop.last %}, {% endif %}{% endfor %}>
 {%- endmacro -%}
 
 {% macro render_union_type(schema) -%}
 {%- if schema.variants | length == 2 -%}
     {%- if schema.variants[0].type == "null" -%}
-        Option<{{ self::render_type(schema=schema.variants[1]) }}>
+        Option<{{ render_type(schema=schema.variants[1]) }}>
     {%- elif schema.variants[1].type == "null" -%}
-        Option<{{ self::render_type(schema=schema.variants[0]) }}>
+        Option<{{ render_type(schema=schema.variants[0]) }}>
     {%- else -%}
-        {{ self::render_generic_union_type(schema=schema) }}
+        {{ render_generic_union_type(schema=schema) }}
     {%- endif -%}
 {%- else -%}
-    {{ self::render_generic_union_type(schema=schema) }}
+    {{ render_generic_union_type(schema=schema) }}
 {%- endif -%}
 {%- endmacro -%}

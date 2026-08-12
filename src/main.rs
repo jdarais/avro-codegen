@@ -7,7 +7,7 @@ mod config;
 mod datamodel;
 mod generator;
 mod lua_env;
-mod tera_env;
+mod template_env;
 
 use std::collections::{BTreeMap, HashMap};
 use std::env::{set_current_dir, current_dir};
@@ -329,12 +329,7 @@ fn main() {
             };
             
             let gen_res = get_generator(generator.as_ref(), generator_configs);
-            let generator_info = match gen_res {
-                Ok(g) => g,
-                Err(e) => {
-                    panic!("Error getting generator '{generator}': {e}");
-                }
-            };
+            let generator_info = gen_res.expect("Error getting generator '{generator}': {e}");
 
             println!("ID: {generator}");
             println!("Name: {}", generator_info.name);

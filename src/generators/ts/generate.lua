@@ -29,10 +29,10 @@ end
 local namespaces = schemas_by_namespace:keys()
 table.sort(namespaces)
 
-render("package.json.tera", "package.json", {namespaces=namespaces})
+render("package.json.jinja", "package.json", {namespaces=namespaces})
 
-render("io.mjs.tera", "dist/_io.mjs")
-render("io.d.mts.tera", "dist/_io.d.mts")
+render("io.mjs.jinja", "dist/_io.mjs")
+render("io.d.mts.jinja", "dist/_io.d.mts")
 
 for namespace, schemas in pairs(schemas_by_namespace) do
     local refs = map()
@@ -56,6 +56,6 @@ for namespace, schemas in pairs(schemas_by_namespace) do
     local impl_file_path = namespace:gsub("[.]", "/"):gsub("(.+)$", "%1/") .. "types.mjs"
     local types_file_path = namespace:gsub("[.]", "/"):gsub("(.+)$", "%1/") .. "types.d.mts"
 
-    render("schema.mjs.tera", "dist/" .. impl_file_path, map {namespace=namespace, schemas=schemas_list, refs=refs_list})
-    render("schema.d.mts.tera", "dist/" .. types_file_path, map {namespace=namespace, schemas=schemas_list, refs=refs_list})
+    render("schema.mjs.jinja", "dist/" .. impl_file_path, map {namespace=namespace, schemas=schemas_list, refs=refs_list})
+    render("schema.d.mts.jinja", "dist/" .. types_file_path, map {namespace=namespace, schemas=schemas_list, refs=refs_list})
 end

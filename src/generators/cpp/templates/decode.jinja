@@ -1,4 +1,4 @@
-{% import "types.tera" as types -%}
+{% import "types.jinja" as types -%}
 {% macro render_decode_type(schema, decoder_ref, val) -%}
 {# TODO: First check for logical types that use special types -#}
 {# Note: the only non-named UUID type is string.  Fixed is handled in header.tera -#}
@@ -26,9 +26,9 @@
     avro::decode({{ decoder_ref }}, {{ val }});
 {%- elif schema.type == "union" -%}
 {%- if schema.variants | length == 2 and schema.variants[0].type == "null" -%}
-    {{ self::render_decode_union_optional_type(schema=schema, decoder_ref=decoder_ref, val=val) }}
+    {{ render_decode_union_optional_type(schema=schema, decoder_ref=decoder_ref, val=val) }}
 {%- else -%}
-    {{ self::render_decode_union_variant_type(schema=schema, decoder_ref=decoder_ref, val=val) }}
+    {{ render_decode_union_variant_type(schema=schema, decoder_ref=decoder_ref, val=val) }}
 {%- endif -%}
 {%- elif schema.type == "ref" -%}
     avro::decode({{ decoder_ref }}, {{ val }});
@@ -51,8 +51,8 @@
         break;
     case 1:
         {
-            {{ types::render_type(schema=schema.variants[1]) }} decoded;
-            {{ self::render_decode_type(schema=schema.variants[1], decoder_ref=decoder_ref, val="decoded") }}
+            {{ types.render_type(schema=schema.variants[1]) }} decoded;
+            {{ render_decode_type(schema=schema.variants[1], decoder_ref=decoder_ref, val="decoded") }}
             {{ val }}.emplace(std::move(decoded));
             break;    
         }
@@ -69,8 +69,8 @@
 {%- for variant in schema.variants %}
     case {{ loop.index0 }}:
         {
-            {{ types::render_type(schema=variant) }} decoded;
-            {{ self::render_decode_type(schema=variant, decoder_ref=decoder_ref, val="decoded") }}
+            {{ types.render_type(schema=variant) }} decoded;
+            {{ render_decode_type(schema=variant, decoder_ref=decoder_ref, val="decoded") }}
             {{ val }}.emplace<{{ loop.index0 }}>(std::move(decoded));
             break;
         }

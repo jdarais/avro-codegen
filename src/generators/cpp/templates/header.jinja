@@ -1,6 +1,6 @@
-{% import "types.tera" as types -%}
-{% import "encode.tera" as encode -%}
-{% import "decode.tera" as decode -%}
+{% import "types.jinja" as types -%}
+{% import "encode.jinja" as encode -%}
+{% import "decode.jinja" as decode -%}
 
 #pragma once
 
@@ -29,7 +29,7 @@
 
 // Forward declarations for record types
 {%- for record_ref in params.record_refs %}
-namespace {{ record_ref.namespace | replace(from=".", to="::") }} { struct {{ record_ref.name | title_case }}; }
+namespace {{ record_ref.namespace | replace(".", "::") }} { struct {{ record_ref.name | title_case }}; }
 {%- endfor %}
 
 
@@ -104,7 +104,7 @@ constexpr std::string_view {{ schema.name | const_case }}_SCHEMA_JSON = R"({{ sc
 // Schema {{ schema.fullname }}
 struct {{ schema.name | title_case }} {
 {%- for field in schema.fields %}
-    {{ types::render_type(schema=field.type) }} {{ field.name | snake_case }};
+    {{ types.render_type(schema=field.type) }} {{ field.name | snake_case }};
 {%- endfor %}
 };
 constexpr std::string_view {{ schema.name | const_case }}_SCHEMA_JSON = R"({{ schema.json }})";
@@ -120,8 +120,8 @@ constexpr std::string_view {{ schema.name | const_case }}_SCHEMA_JSON = R"({{ sc
 namespace avro {
 {% for schema in params.schemas -%}
 template<>
-struct codec_traits<{{ schema.namespace | replace(from=".", to="::") }}::{{ schema.name | title_case }}> {
-    static void encode(Encoder& e, const {{ schema.namespace | replace(from=".", to="::") }}::{{ schema.name | title_case }}& val) {
+struct codec_traits<{{ schema.namespace | replace(".", "::") }}::{{ schema.name | title_case }}> {
+    static void encode(Encoder& e, const {{ schema.namespace | replace(".", "::") }}::{{ schema.name | title_case }}& val) {
 {%- if schema.type == "enum" %}
         e.encodeEnum(val.value());
 {%- elif schema.type == "fixed" %}
@@ -132,14 +132,14 @@ struct codec_traits<{{ schema.namespace | replace(from=".", to="::") }}::{{ sche
 {%- endif %}
 {%- elif schema.type == "record" %}
 {%- for field in schema.fields %}
-        {{ encode::render_encode_type(schema=field.type, encoder_ref="e", val=["val.", field.name | snake_case] | join()) | indent(prefix="        ") }}
+        {{ encode.render_encode_type(schema=field.type, encoder_ref="e", val=["val.", field.name | snake_case] | join()) | indent(8) }}
 {%- endfor %}
 {%- endif %}
     }
 
-    static void decode(Decoder& d, {{ schema.namespace | replace(from=".", to="::") }}::{{ schema.name | title_case }}& val) {
+    static void decode(Decoder& d, {{ schema.namespace | replace(".", "::") }}::{{ schema.name | title_case }}& val) {
 {%- if schema.type == "enum" %}
-        val = static_cast<{{ schema.namespace | replace(from=".", to="::") }}::{{ schema.name | title_case }}::ValueType>(d.decodeEnum());
+        val = static_cast<{{ schema.namespace | replace(".", "::") }}::{{ schema.name | title_case }}::ValueType>(d.decodeEnum());
 {%- elif schema.type == "fixed" %}
 {%- if schema.logical_type is defined and schema.logical_type == "uuid" %}
         std::vector<uint8_t> vec = d.decodeFixed({{ schema.size }});
@@ -155,14 +155,14 @@ struct codec_traits<{{ schema.namespace | replace(from=".", to="::") }}::{{ sche
                 switch (*it) {
 {%- for field in schema.fields %}
                 case {{ loop.index0 }}:
-                    {{ decode::render_decode_type(schema=field.type, decoder_ref="d", val=["val.", field.name | snake_case] | join()) | indent(prefix="                    ") }}
+                    {{ decode.render_decode_type(schema=field.type, decoder_ref="d", val=["val.", field.name | snake_case] | join()) | indent(20) }}
                     break;
 {%- endfor %}
                 }
             }
         } else {
 {%- for field in schema.fields %}
-            {{ decode::render_decode_type(schema=field.type, decoder_ref="d", val=["val.", field.name | snake_case] | join()) | indent(prefix="            ") }}
+            {{ decode.render_decode_type(schema=field.type, decoder_ref="d", val=["val.", field.name | snake_case] | join()) | indent(12) }}
 {%- endfor %}
         }
 {%- endif %}
@@ -171,13 +171,13 @@ struct codec_traits<{{ schema.namespace | replace(from=".", to="::") }}::{{ sche
 
 {%- if schema.type == "record" %}
 template<>
-struct codec_traits<std::unique_ptr<{{ schema.namespace | replace(from=".", to="::") }}::{{ schema.name | title_case }}>> {
-    static void encode(Encoder& e, const std::unique_ptr<{{ schema.namespace | replace(from=".", to="::") }}::{{ schema.name | title_case }}>& val) {
+struct codec_traits<std::unique_ptr<{{ schema.namespace | replace(".", "::") }}::{{ schema.name | title_case }}>> {
+    static void encode(Encoder& e, const std::unique_ptr<{{ schema.namespace | replace(".", "::") }}::{{ schema.name | title_case }}>& val) {
         avro::encode(e, *val);
     }
 
-    static void decode(Decoder& d, std::unique_ptr<{{ schema.namespace | replace(from=".", to="::") }}::{{ schema.name | title_case }}>& val) {
-        val = std::make_unique<{{ schema.namespace | replace(from=".", to="::") }}::{{ schema.name | title_case }}>();
+    static void decode(Decoder& d, std::unique_ptr<{{ schema.namespace | replace(".", "::") }}::{{ schema.name | title_case }}>& val) {
+        val = std::make_unique<{{ schema.namespace | replace(".", "::") }}::{{ schema.name | title_case }}>();
         avro::decode(d, *val);
     }
 };

@@ -1,6 +1,6 @@
 {% macro render_union_type(cardinality) -%}
 #[derive(serde::Serialize, serde::Deserialize, Debug, Eq, PartialEq)]
-pub enum Union{{ cardinality }}<{% for i in range(end=cardinality) %}T{{i+1}}{% if not loop.last %},{% endif %}{% endfor %}> {
+pub enum Union{{ cardinality }}<{% for i in range(cardinality) %}T{{i+1}}{% if not loop.last %},{% endif %}{% endfor %}> {
 {%- if cardinality >= 1 %}
    Variant1(T1),
 {%- endif %}
@@ -98,5 +98,5 @@ pub enum Union{{ cardinality }}<{% for i in range(end=cardinality) %}T{{i+1}}{% 
 {%- endmacro -%}
 
 {% for cardinality in params.union_cardinalities %}
-{{ self::render_union_type(cardinality=cardinality) }}
+{{ render_union_type(cardinality) }}
 {% endfor %}

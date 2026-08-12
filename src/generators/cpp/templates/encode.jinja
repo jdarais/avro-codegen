@@ -27,9 +27,9 @@
     avro::encode({{ encoder_ref }}, {{ val }});
 {%- elif schema.type == "union" -%}
 {%- if schema.variants | length == 2 and schema.variants[0].type == "null" -%}
-    {{ self::render_encode_union_optional_type(schema=schema, encoder_ref=encoder_ref, val=val) }}
+    {{ render_encode_union_optional_type(schema=schema, encoder_ref=encoder_ref, val=val) }}
 {%- else -%}
-    {{ self::render_encode_union_variant_type(schema=schema, encoder_ref=encoder_ref, val=val) }}
+    {{ render_encode_union_variant_type(schema=schema, encoder_ref=encoder_ref, val=val) }}
 {%- endif -%}
 {%- elif schema.type == "ref" -%}
     avro::encode({{ encoder_ref }}, {{ val }});
@@ -43,7 +43,7 @@
 {% macro render_encode_union_optional_type(schema, encoder_ref, val) -%}
 if ({{ val }}) {
     {{ encoder_ref }}.encodeUnionIndex(1);
-    {{ self::render_encode_type(schema=schema.variants[1], encoder_ref=encoder_ref, val=[val, ".value()"] | join()) }}
+    {{ render_encode_type(schema=schema.variants[1], encoder_ref=encoder_ref, val=[val, ".value()"] | join()) }}
 } else {
     {{ encoder_ref }}.encodeUnionIndex(0);
     {{ encoder_ref }}.encodeNull();
@@ -55,7 +55,7 @@ if ({{ val }}) {
 switch({{ val }}.index()) {
 {%- for variant in schema.variants %}
 case {{ loop.index0 }}:
-    {{ self::render_encode_type(schema=variant, encoder_ref=encoder_ref, val=["std::get<", loop.index0, ">(", val, ")"] | join )}}
+    {{ render_encode_type(schema=variant, encoder_ref=encoder_ref, val=["std::get<", loop.index0, ">(", val, ")"] | join )}}
     break;
 {%- endfor %}
 }

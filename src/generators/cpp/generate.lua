@@ -49,7 +49,7 @@ for ns, schemas in pairs(schemas_by_namespace) do
     local cpp_namespace = ns:gsub("[.]", "::")
 
     render(
-        "header.tera",
+        "header.jinja",
         "include/"..header_name(ns),
         {
             namespace=cpp_namespace,

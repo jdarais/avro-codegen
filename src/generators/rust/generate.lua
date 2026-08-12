@@ -44,16 +44,16 @@ end
 
 
 if params.cargo_toml then
-    render("Cargo.toml.tera", "Cargo.toml")
+    render("Cargo.toml.jinja", "Cargo.toml")
 end
 
-render("io.tera", "src/_io.rs")
+render("io.jinja", "src/_io.rs")
 
 local union_cardinalities_list = array {}
 for k, _ in pairs(union_cardinalities) do
     union_cardinalities_list:push(k)
 end
-render("unions.tera", "src/_unions.rs", map { union_cardinalities = union_cardinalities_list })
+render("unions.jinja", "src/_unions.rs", map { union_cardinalities = union_cardinalities_list })
 
 local lib_mod = modules:remove("")
 lib_mod.submodules["_io"] = true
@@ -61,7 +61,7 @@ lib_mod.submodules["_unions"] = true
 local lib_submodules = lib_mod.submodules:keys()
 table.sort(lib_submodules)
 render(
-    "mod.tera",
+    "mod.jinja",
     "src/lib.rs",
     map{
         submodules = lib_submodules,
@@ -74,7 +74,7 @@ for name, module in pairs(modules) do
     local submodules = module.submodules:keys()
     table.sort(submodules)
     render(
-        "mod.tera",
+        "mod.jinja",
         "src/"..name:gsub("[.]", "/")..".rs",
         map{
             submodules = submodules,

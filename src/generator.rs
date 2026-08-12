@@ -14,10 +14,10 @@ use std::sync::{Arc, Mutex};
 use anyhow::anyhow;
 use flate2::read::GzDecoder;
 use glob::glob;
-use tera::Tera;
+use minijinja::Environment;
 
 use crate::config::GeneratorConfig;
-use crate::tera_env::create_tera;
+use crate::template_env::create_env;
 
 #[derive(Clone)]
 pub struct ParamDescription {
@@ -28,7 +28,7 @@ pub struct ParamDescription {
 pub struct Generator {
     pub name: Arc<str>,
     pub description: Arc<str>,
-    pub tera: Arc<Mutex<Tera>>,
+    pub env: Arc<Mutex<Environment<'static>>>,
     pub generate_script: Arc<str>,
     pub params: HashMap<Arc<str>, ParamDescription>,
 }
@@ -41,7 +41,7 @@ struct GeneratorToml {
 
 fn get_template_files_for_generator(
     generator_dir: &Path,
-) -> Result<Vec<(PathBuf, Option<Arc<str>>)>, anyhow::Error> {
+) -> Result<Vec<(PathBuf, Arc<str>)>, anyhow::Error> {
     let mut search_path = generator_dir.to_owned();
     search_path.push("templates");
     search_path.push("**");
@@ -51,7 +51,7 @@ fn get_template_files_for_generator(
         .expect("File path is expected to always be valid UTF-8");
     let glob_paths = glob(search_pattern)?;
 
-    let mut result: Vec<(PathBuf, Option<Arc<str>>)> = Vec::new();
+    let mut result: Vec<(PathBuf, Arc<str>)> = Vec::new();
     for glob_path in glob_paths {
         match glob_path {
             Ok(path) => {
@@ -61,7 +61,7 @@ fn get_template_files_for_generator(
                     .to_str()
                     .expect("File path is expected to always be valid UTF-8");
 
-                result.push((path.clone(), Some(Arc::from(path_rel_to_template_dir_str))));
+                result.push((path.clone(), Arc::from(path_rel_to_template_dir_str)));
             }
             Err(e) => {
                 println!(
@@ -181,13 +181,15 @@ fn read_builtin_generator_archive(archive_data: &[u8]) -> Result<Generator, anyh
     match generate_script {
         None => Err(anyhow!("No generate.lua file found")),
         Some(s) => {
-            let mut tera = create_tera();
-            tera.add_raw_templates(templates)?;
+            let mut env = create_env();
+            for (name, content) in templates {
+                env.add_template_owned(name.to_string(), content.to_string())?;
+            }
 
             Ok(Generator {
                 name,
                 description,
-                tera: Arc::new(Mutex::new(tera)),
+                env: Arc::new(Mutex::new(env)),
                 generate_script: s,
                 params,
             })
@@ -213,8 +215,14 @@ fn create_generator_from_path(generator_dir: &Path) -> Result<Generator, anyhow:
         ));
     }
 
-    let mut tera = create_tera();
-    tera.add_template_files(get_template_files_for_generator(generator_dir)?)?;
+    let mut env = create_env();
+    let template_paths = get_template_files_for_generator(generator_dir)?;
+    for (path, name) in template_paths {
+        let mut f = File::open(path)?;
+        let mut content = String::new();
+        f.read_to_string(&mut content)?;
+        env.add_template_owned(name.to_string(), content)?;
+    }
 
     let mut generate_script_file = File::open(generate_script_path)?;
     let files_toml_content_len = generate_script_file.metadata()?.len();
@@ -235,7 +243,7 @@ fn create_generator_from_path(generator_dir: &Path) -> Result<Generator, anyhow:
     Ok(Generator {
         name,
         description,
-        tera: Arc::new(Mutex::new(tera)),
+        env: Arc::new(Mutex::new(env)),
         generate_script: generate_script_content.into(),
         params,
     })
