@@ -1,4 +1,4 @@
-import { RECORD_WITH_TYPES_SCHEMA } from "rust-and-ts/org/testorg";
+import { RECORD_WITH_TYPES_SCHEMA } from "sample-schemas/org/testorg";
 import { Buffer } from "buffer";
 
 describe("Record with types", () => {

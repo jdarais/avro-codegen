@@ -46,11 +46,11 @@ fn test_rust_generator_output() -> Result<(), anyhow::Error> {
     let temp_dir = tempfile::tempdir()?;
     let temp = temp_dir.keep();
 
-    copy_files("examples/rust_and_ts", "src/**/*", &temp)?;
-    copy_files("examples/rust_and_ts", "test/rust/src/**/*", &temp)?;
-    copy_files("examples/rust_and_ts", "test/rust/Cargo.toml", &temp)?;
-    copy_files("examples/rust_and_ts", "test/rust/src/**/*", &temp)?;
-    copy_files("examples/rust_and_ts", "avro_codegen.toml", &temp)?;
+    copy_files("examples/sample_schemas", "src/**/*", &temp)?;
+    copy_files("examples/sample_schemas", "test/rust/src/**/*", &temp)?;
+    copy_files("examples/sample_schemas", "test/rust/Cargo.toml", &temp)?;
+    copy_files("examples/sample_schemas", "test/rust/src/**/*", &temp)?;
+    copy_files("examples/sample_schemas", "avro_codegen.toml", &temp)?;
 
     let mut cmd = cargo_bin_cmd!("avro_codegen");
 

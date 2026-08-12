@@ -5,10 +5,10 @@ This is alpha/experimental software
 
 ## Using the avro_codegen CLI
 
-The code generator can be run by passing your project directory to the avro_codegen CLI. For example, to run code generation for the `rust_and_ts` example project in this repository, run:
+The code generator can be run by passing your project directory to the avro_codegen CLI. For example, to run code generation for the `sample_schemas` example project in this repository, run:
 
 ```sh
-avro_codegen generate examples/rust_and_ts
+avro_codegen generate examples/sample_schemas
 ```
 
 Output of `avro_codegen --help`:
@@ -153,7 +153,7 @@ Package properties include:
     },
   ],
   "package": {
-    "name": "rust_and_ts",
+    "name": "sample_schemas",
     "version": "0.1.0",
     "description": "An exmaple project that generates some basic types for rust and typescript"
   },

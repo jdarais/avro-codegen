@@ -1,4 +1,4 @@
-import { type RecordWithTypes, RECORD_WITH_TYPES_SCHEMA } from "rust-and-ts/org/testorg";
+import { type RecordWithTypes, RECORD_WITH_TYPES_SCHEMA } from "sample-schemas/org/testorg";
 
 describe("Record with types", () => {
     it("serializes and deserializes", () => {

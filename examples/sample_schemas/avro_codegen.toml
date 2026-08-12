@@ -1,4 +1,4 @@
-name = "rust_and_ts"
+name = "sample_schemas"
 version = "0.1.0"
 description = "An exmaple project that generates some basic types for rust and typescript"
 include = ["**/*.avsc"]

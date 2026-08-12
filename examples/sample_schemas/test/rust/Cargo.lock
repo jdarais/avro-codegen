@@ -703,32 +703,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "rust-and-ts"
-version = "0.1.0"
-dependencies = [
- "apache-avro",
- "bigdecimal",
- "lazy_static",
- "serde",
- "serde_bytes",
- "serde_json",
- "uuid",
-]
-
-[[package]]
-name = "rust-and-ts-test"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "apache-avro",
- "bigdecimal",
- "rust-and-ts",
- "rust_decimal",
- "serde_bytes",
- "uuid",
-]
-
-[[package]]
 name = "rust_decimal"
 version = "1.39.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -749,6 +723,32 @@ name = "rustversion"
 version = "1.0.22"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b39cdef0fa800fc44525c84ccb54a029961a8215f9619753635a9c0d2538d46d"
+
+[[package]]
+name = "sample-schemas"
+version = "0.1.0"
+dependencies = [
+ "apache-avro",
+ "bigdecimal",
+ "lazy_static",
+ "serde",
+ "serde_bytes",
+ "serde_json",
+ "uuid",
+]
+
+[[package]]
+name = "sample-schemas-test"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "apache-avro",
+ "bigdecimal",
+ "rust_decimal",
+ "sample-schemas",
+ "serde_bytes",
+ "uuid",
+]
 
 [[package]]
 name = "seahash"

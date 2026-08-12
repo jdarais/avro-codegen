@@ -6,10 +6,10 @@ fn main() {
 mod tests {
     use std::collections::HashMap;
 
-    use rust_and_ts::org::testorg::test::{RecordWithUnion, MyEnum, TestRecord};
-    use rust_and_ts::org::testorg::{InternallyDefinedRecord, RecordWithTypes, LongWord, Suit, Size};
-    use rust_and_ts::_unions::{Union3, Union4};
-    use rust_and_ts::RecordWithRef;
+    use sample_schemas::org::testorg::test::{RecordWithUnion, MyEnum, TestRecord};
+    use sample_schemas::org::testorg::{InternallyDefinedRecord, RecordWithTypes, LongWord, Suit, Size};
+    use sample_schemas::_unions::{Union3, Union4};
+    use sample_schemas::RecordWithRef;
 
     #[test]
     fn test_record_with_union() -> anyhow::Result<()> {
@@ -83,8 +83,8 @@ mod tests {
             ].into_iter().collect::<HashMap<String, i32>>(),
             decimal_value: apache_avro::Decimal::from(&[251, 155]),
             big_decimal_value: "45.7".parse()?,
-            duration_value: rust_and_ts::org::testorg::Duration(apache_avro::Duration::new(apache_avro::Months::new(3), apache_avro::Days::new(7), apache_avro::Millis::new(500))),
-            uuid_value: rust_and_ts::org::testorg::Uuid(uuid::Uuid::new_v4())
+            duration_value: sample_schemas::org::testorg::Duration(apache_avro::Duration::new(apache_avro::Months::new(3), apache_avro::Days::new(7), apache_avro::Millis::new(500))),
+            uuid_value: sample_schemas::org::testorg::Uuid(uuid::Uuid::new_v4())
         };
 
         let mut buffer: Vec<u8> = Vec::new();

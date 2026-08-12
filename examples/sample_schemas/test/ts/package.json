@@ -1,5 +1,5 @@
 {
-  "name": "rust-and-ts-test",
+  "name": "sample-schemas-test",
   "version": "0.1.0",
   "scripts": {
     "build": "tsc -p .",
@@ -15,7 +15,7 @@
     "events": "^3.3.0",
     "path-browserify": "^1.0.1",
     "process": "^0.11.10",
-    "rust-and-ts": "../../output/ts",
+    "sample-schemas": "../../output/ts",
     "stream-browserify": "^3.0.0",
     "util": "^0.12.5",
     "uuid": "^13.0.0"
