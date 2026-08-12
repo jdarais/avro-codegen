@@ -8,7 +8,7 @@ This is alpha/experimental software
 The code generator can be run by passing your project directory to the avro_codegen CLI. For example, to run code generation for the `sample_schemas` example project in this repository, run:
 
 ```sh
-avro_codegen generate examples/sample_schemas
+avro_codegen generate -p examples/sample_schemas
 ```
 
 Output of `avro_codegen --help`:
