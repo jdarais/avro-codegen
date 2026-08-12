@@ -1,7 +1,7 @@
 import avro from "avsc";
 import { Buffer } from "buffer";
 
-const ONE_DAY_IN_MILLIS = 1000 * 60 * 60 * 24;
+export const ONE_DAY_IN_MILLIS: number;
 
 export class DateType extends avro.types.LogicalType {
     _fromValue(val: number): Date;
@@ -20,8 +20,9 @@ export class DurationType extends avro.types.LogicalType {
     _toValue(val: { months: number, days: number, millis: number }): Buffer;
 }
 
-export const _logicalTypes = {
-    "date": DateType,
-    "timestamp-millis": TimestampMillisType,
-    "duration": DurationType
+export const _logicalTypes: {
+    "date": avro.types.LogicalType,
+    "timestamp-millis": avro.types.LogicalType,
+    "duration": avro.types.LogicalType,
+    "uuid": avro.types.LogicalType,
 }
