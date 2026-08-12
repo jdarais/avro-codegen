@@ -1,7 +1,7 @@
 {% import "types.jinja" as types -%}
 {% macro render_decode_type(schema, decoder_ref, val) -%}
 {# TODO: First check for logical types that use special types -#}
-{# Note: the only non-named UUID type is string.  Fixed is handled in header.tera -#}
+{# Note: the only non-named UUID type is string.  Fixed is handled in header.jinja -#}
 {%- if schema.logical_type is defined and schema.logical_type == "uuid" -%}
     {{ val }} = boost::lexical_cast<boost::uuids::uuid>({{ decoder_ref }}.decodeString());
 {%- elif schema.type == "null" -%}

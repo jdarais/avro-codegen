@@ -1,1 +1,1 @@
-render("schemas.tera", "schemas.txt")
+render("schemas.jinja", "schemas.txt")

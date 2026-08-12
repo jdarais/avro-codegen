@@ -1,6 +1,6 @@
 {% macro render_encode_type(schema, encoder_ref, val) -%}
 {# TODO: First check for logical types that use special types -#}
-{# Note: the only non-named UUID type is string.  Fixed is handled in header.tera -#}
+{# Note: the only non-named UUID type is string.  Fixed is handled in header.jinja -#}
 {%- if schema.logical_type is defined and schema.logical_type == "uuid" -%}
     {%- if schema.type == "string" -%}
         {{ encoder_ref }}.encodeString(boost::uuids::to_string({{ val }}));

@@ -1,5 +1,5 @@
 # avro-codegen
-Avro-codegen is a universal code generator for avro schemas.  It allows you to generate data structures in various programming languages that can be used for convenient serialization / deserialization and that can be checked by the compiler or type checker at build-time.  Avro-codegen comes with built-in generators, and also makes it easy to create a custom generator if the available built-in generators don't meet your needs.  Generators are written in a combination of [Lua](https://lua.org) script and [Tera](https://keats.github.io/tera/docs/) templates.
+Avro-codegen is a universal code generator for avro schemas.  It allows you to generate data structures in various programming languages that can be used for convenient serialization / deserialization and that can be checked by the compiler or type checker at build-time.  Avro-codegen comes with built-in generators, and also makes it easy to create a custom generator if the available built-in generators don't meet your needs.  Generators are written in a combination of [Lua](https://lua.org) script and [Mini Jinja](https://lib.rs/crates/minijinja) templates.
 
 This is alpha/experimental software
 
@@ -55,7 +55,7 @@ A generator contains:
 
 - A `generator.toml` file that provides metadata (name, description, etc.) about the generator
 - A `generator.lua` script that invokes templates to render code (or other) files
-- A `templates/` direcotry containing a collection of tera templates that can be invoked by the generator script
+- A `templates/` direcotry containing a collection of minijinja templates that can be invoked by the generator script
 
 Examples can be found in `src/generators`
 
@@ -173,12 +173,12 @@ To render a template, the `generate.lua` script calls the `render` function, whi
 
 To assist with code generation, the lua environment has been augmented with some additional functions
 
-- `map` - Creates a map. A map differs from a Lua table in that it only accepts string keys making for more predictable serialization to a jason value when passed to tera templates
+- `map` - Creates a map. A map differs from a Lua table in that it only accepts string keys, making for more predictable serialization to a map value when passed to templates
   - `map.update(dest, source)` - updates the `dest` map with keys from table `other`.  If keys in `dest` are present in `other`, they are overwritten.
   - `map.remove(m, key)` - removes and returns the value in map `m` at `key`
   - `map.keys(m)` - returns an array containing the keys of the map `m`
   - `map.values(m)` - returns an array containing the values of the map `m`
-- `array` - Creates an array. An array differs from a Lua
+- `array` - Creates an array. An array differs from a Lua table in that it only accepts contiguous numeric indices, making for more predictable serialization to an array value when passed to templates
   - `array.push(arr, val)` - adds the value `val` to the end of array `arr`
   - `array.append(arr, source)` - appends values from the array `source` to the end of the array `arr`
   - `array.map(arr, fn)` - returns an array containing values from `arr` after `fn` is applied to them
@@ -189,11 +189,11 @@ To assist with code generation, the lua environment has been augmented with some
 - `string.to_const_case(s)` - converts an identifier string to const case (e.g. `MY_IDENTIFIER_NAME`)
 - `string.split(s, sep)` - returns an array containing segments of the string `s` split on `sep`. (e.g. `string.split("hello world", " ")` returns `{ 1 = "hello", 2 = "world" }`).  `sep` is a regular expression that follows the same syntax as lua's `string.find` and `string.gusb` functions.
 
-### Tera Template Environment
+### Mini Jinja Template Environment
 
-The tera template environment is provided the same `schemas`, `package`, and `params` variables, howevern the `params` variable also contains any parameters passed into the `render` function for the `params` argument.
+The minijinja template environment is provided the same `schemas`, `package`, and `params` variables, however the `params` variable also contains any parameters passed into the `render` function for the `params` argument.
 
-The tera environment is augmented with the following filters:
+The template environment is augmented with the following filters:
 
 - `snake_case`
 - `kebab_case`
