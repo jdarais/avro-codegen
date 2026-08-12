@@ -155,7 +155,7 @@ Package properties include:
   "package": {
     "name": "sample_schemas",
     "version": "0.1.0",
-    "description": "An exmaple project that generates some basic types for rust and typescript"
+    "description": "An example project that generates some basic types for rust and typescript"
   },
   "params": {
     "cargo_toml": true
