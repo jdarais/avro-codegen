@@ -12,7 +12,7 @@ use std::sync::Arc;
 use anyhow::anyhow;
 use serde::Deserialize;
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct GeneratorConfig {
     #[serde(default)]
     pub path: Option<String>,
@@ -21,6 +21,7 @@ pub struct GeneratorConfig {
     pub params: serde_json::Map<String, serde_json::Value>,
 }
 
+#[derive(Clone)]
 pub struct ProjectConfig {
     pub name: Arc<str>,
     pub version: Arc<str>,
@@ -46,8 +47,8 @@ struct ProjectConfigToml {
     pub generators: HashMap<String, GeneratorConfig>,
 }
 
-pub fn read_from_toml(project_dir: &Path) -> anyhow::Result<ProjectConfig> {
-    let project_config_path = project_dir.join("avro_codegen.toml");
+pub fn read_from_toml<P: AsRef<Path>>(project_dir: P) -> anyhow::Result<ProjectConfig> {
+    let project_config_path = project_dir.as_ref().join("avro_codegen.toml");
     if !project_config_path.is_file() {
         return Err(anyhow!(
             "No project config file found at: {}",

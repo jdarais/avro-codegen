@@ -3,13 +3,18 @@
 //
 // This program is licensed under the GPLv3.0 license (https://github.com/jdarais/avro-codegen/blob/main/COPYING)]
 
+use std::sync::Arc;
+
 use anyhow::anyhow;
 use apache_avro::schema::{InnerDecimalSchema, RecordField, Schema, UnionSchema, UuidSchema};
 use serde::Serialize;
 use serde_json::json;
 
+use crate::package::SchemaPackage;
+
 #[derive(Serialize, Clone)]
 pub struct SchemaInfo {
+    pub package: Arc<SchemaPackage>,
     pub name: String,
     pub namespace: String,
     pub full_name: String,

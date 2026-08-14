@@ -7,13 +7,13 @@ mod config;
 mod datamodel;
 mod generator;
 mod lua_env;
+mod package;
 mod template_env;
 
 use std::collections::{BTreeMap, HashMap};
 use std::env::{set_current_dir, current_dir};
-use std::fs::{remove_dir_all, File};
-use std::io::Read;
-use std::path::{Path, PathBuf, MAIN_SEPARATOR_STR};
+use std::fs::remove_dir_all;
+use std::path::{Path, MAIN_SEPARATOR_STR};
 use std::sync::Arc;
 
 use apache_avro::schema::{DecimalSchema, InnerDecimalSchema, Schema, UuidSchema};
@@ -23,6 +23,7 @@ use mlua::LuaSerdeExt;
 use crate::config::GeneratorConfig;
 use crate::datamodel::{schema_to_json, PackageInfo, SchemaInfo};
 use crate::generator::{Generator, INTERNAL_GENERATOR_NAMES, get_generator};
+use crate::package::get_schema_sources_from_project_path;
 use crate::lua_env::{create_lua_env, GeneratorContext};
 
 #[derive(Parser)]
@@ -79,6 +80,7 @@ fn collect_schemas(
             schema_collection.insert(
                 fullname.clone(),
                 SchemaInfo {
+                    package: schema_info.package.clone(),
                     name: sch.name.name().to_string(),
                     namespace: sch
                         .name
@@ -96,6 +98,7 @@ fn collect_schemas(
             schema_collection.insert(
                 fullname.clone(),
                 SchemaInfo {
+                    package: schema_info.package.clone(),
                     name: sch.name.name().to_string(),
                     namespace: sch
                         .name
@@ -118,6 +121,7 @@ fn collect_schemas(
             schema_collection.insert(
                 fullname.clone(),
                 SchemaInfo {
+                    package: schema_info.package.clone(),
                     name: fixed.name.name().to_string(),
                     namespace: fixed
                         .name
@@ -140,6 +144,7 @@ fn collect_schemas(
             schema_collection.insert(
                 fullname.clone(),
                 SchemaInfo {
+                    package: schema_info.package.clone(),
                     name: sch.name.name().to_string(),
                     namespace: sch
                         .name
@@ -161,6 +166,7 @@ fn collect_schemas(
                 schema_collection.insert(
                     fullname.clone(),
                     SchemaInfo {
+                        package: schema_info.package.clone(),
                         name: fixed_sch.name.name().to_string(),
                         namespace: fixed_sch.name.namespace().map(str::to_string).unwrap_or_else(String::new),
                         full_name: fullname,
@@ -186,33 +192,14 @@ fn main() {
         } => {
             let canonical_project_dir = Path::new(project_dir.as_ref()).canonicalize().unwrap();
             set_current_dir(&canonical_project_dir).unwrap();
-            let cfg = config::read_from_toml(&current_dir().unwrap()).unwrap();
-            let mut schema_paths: Vec<PathBuf> = Vec::new();
-            let mut schema_strings: Vec<String> = Vec::new();
-            for include_path in cfg.include.iter() {
-                let files = glob::glob(include_path.as_ref()).unwrap();
-                for f_path_res in files {
-                    let f_path = f_path_res.unwrap();
-                    let canonical_f_path = f_path.canonicalize().unwrap();
-                    let relative_f_path = canonical_f_path
-                        .strip_prefix(&canonical_project_dir)
-                        .unwrap()
-                        .to_owned();
-                    let mut f = File::open(&f_path).unwrap();
-                    let file_size = f.metadata().unwrap().len();
 
-                    let mut schema = String::with_capacity(file_size as usize);
-                    f.read_to_string(&mut schema).unwrap();
-
-                    schema_paths.push(relative_f_path);
-                    schema_strings.push(schema);
-                }
-            }
-
-            let schema_strs: Vec<&str> = schema_strings.iter().map(|s| s.as_str()).collect();
+            let cfg = config::read_from_toml(&canonical_project_dir).unwrap();
+            let schema_sources = get_schema_sources_from_project_path(&canonical_project_dir, Some(&cfg)).unwrap();
+            
+            let schema_strs: Vec<&str> = schema_sources.iter().map(|source| source.schema.as_ref()).collect();
             let schemas = Schema::parse_list(&schema_strs[..]).unwrap();
             let mut schema_infos: Vec<SchemaInfo> = Vec::new();
-            for (path, schema) in schema_paths.iter().zip(schemas.iter()) {
+            for (source, schema) in schema_sources.iter().zip(schemas.iter()) {
                 let name = schema.name().map(|n| n.name().to_string());
                 let namespace = schema.namespace();
                 let full_name = match &name {
@@ -230,11 +217,12 @@ fn main() {
                 };
 
                 schema_infos.push(SchemaInfo {
+                    package: source.package.clone(),
                     name: name.unwrap_or_else(|| String::new()),
                     namespace: namespace.map(str::to_string).unwrap_or_else(|| String::new()),
                     full_name: full_name.unwrap_or_else(|| String::new()),
                     // TODO: Always provide unix-style path regardless fo platform
-                    file_path: String::from(path.as_os_str().to_str().unwrap())
+                    file_path: String::from(source.path.as_ref())
                         .replace(MAIN_SEPARATOR_STR, "/"),
                     schema: schema.clone(),
                 });
