@@ -12,6 +12,8 @@ use std::sync::Arc;
 use anyhow::anyhow;
 use serde::Deserialize;
 
+use crate::dependency::{DependencySpec, dependency_spec_from_toml};
+
 #[derive(Deserialize, Debug, Clone)]
 pub struct GeneratorConfig {
     #[serde(default)]
@@ -28,7 +30,7 @@ pub struct ProjectConfig {
     pub description: Arc<str>,
     pub include: Vec<Arc<str>>,
     pub default_generators: Vec<Arc<str>>,
-    pub dependencies: HashMap<Arc<str>, Arc<str>>,
+    pub dependencies: HashMap<Arc<str>, DependencySpec>,
     pub generator_configs: HashMap<Arc<str>, GeneratorConfig>,
 }
 
@@ -41,7 +43,7 @@ struct ProjectConfigToml {
     pub default_generators: Vec<String>,
 
     #[serde(default)]
-    pub dependencies: HashMap<String, String>,
+    pub dependencies: HashMap<String, toml::Value>,
 
     #[serde(default)]
     pub generators: HashMap<String, GeneratorConfig>,
@@ -84,10 +86,11 @@ pub fn read_from_toml<P: AsRef<Path>>(project_dir: P) -> anyhow::Result<ProjectC
         .map(String::into)
         .collect();
 
-    let dependencies: HashMap<Arc<str>, Arc<str>> = dependencies_toml
-        .into_iter()
-        .map(|(k, v)| (k.into(), v.into()))
-        .collect();
+    let mut dependencies: HashMap<Arc<str>, DependencySpec> = HashMap::new();
+    for (k, v) in dependencies_toml.iter() {
+        let dep = dependency_spec_from_toml(v)?;
+        dependencies.insert(k.clone().into(), dep);
+    }
 
     let generator_configs: HashMap<Arc<str>, GeneratorConfig> = generators_toml
         .into_iter()

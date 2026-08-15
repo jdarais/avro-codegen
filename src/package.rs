@@ -1,64 +1,60 @@
-use std::borrow::Cow;
 use std::fs::File;
 use std::io::Read;
 use std::path::Path;
 use std::sync::Arc;
+use std::{borrow::Cow, path::PathBuf};
 
-use serde::{Deserialize, Serialize};
+use crate::{
+    config::{self, ProjectConfig},
+    datamodel::PackageInfo,
+};
 
-use crate::config::{self, ProjectConfig};
-
-#[derive(Serialize, Deserialize, Clone)]
 pub struct SchemaPackage {
-    pub name: Arc<str>,
-    pub version: Arc<str>,
-    pub description: Arc<str>,
+    pub config: ProjectConfig,
+    pub schemas: Vec<SchemaSource>,
 }
 
 pub struct SchemaSource {
     // Package that the schema belongs to
-    pub package: Arc<SchemaPackage>,
+    pub package: Arc<PackageInfo>,
     // Path relative to package root
     pub path: Arc<str>,
     // Schema json string
     pub schema: Arc<str>,
 }
 
-pub fn get_schema_sources_from_project_path<'a, P: AsRef<Path>>(
+pub fn get_package_from_project_path<'a, P: AsRef<Path>>(
     project_dir: P,
-    project_config: Option<&'a ProjectConfig>
-) -> Result<Vec<SchemaSource>, anyhow::Error> {
-    let canonical_project_dir = Path::new(project_dir.as_ref()).canonicalize().unwrap();
-    let cfg: Cow<'a, ProjectConfig> = match project_config {
-        Some(c) => Cow::Borrowed(c),
-        None => Cow::Owned(config::read_from_toml(project_dir.as_ref())?)
-    };
+    is_external: bool,
+) -> Result<SchemaPackage, anyhow::Error> {
+    let canonical_project_dir = Path::new(project_dir.as_ref()).canonicalize()?;
+    let config = config::read_from_toml(project_dir.as_ref())?;
 
-    let package = Arc::new(SchemaPackage {
-        name: cfg.name.clone(),
-        version: cfg.version.clone(),
-        description: cfg.description.clone(),
+    let package = Arc::new(PackageInfo {
+        name: String::from(config.name.as_ref()),
+        version: String::from(config.version.as_ref()),
+        description: String::from(config.description.as_ref()),
+        is_external,
     });
 
     let mut schemas: Vec<SchemaSource> = Vec::new();
-    for include_path in cfg.include.iter() {
+    for include_path in config.include.iter() {
         let absolute_include_path = canonical_project_dir.join(include_path.as_ref());
         let absolute_include_path_str = absolute_include_path.to_str().ok_or_else(|| {
             anyhow::anyhow!("Failed to convert path {absolute_include_path:?} to utf-8")
         })?;
-        let files = glob::glob(absolute_include_path_str).unwrap();
+        let files = glob::glob(absolute_include_path_str)?;
         for f_path_res in files {
-            let f_path = f_path_res.unwrap();
-            let canonical_f_path = f_path.canonicalize().unwrap();
+            let f_path = f_path_res?;
+            let canonical_f_path = f_path.canonicalize()?;
             let relative_f_path = canonical_f_path
-                .strip_prefix(&canonical_project_dir)
-                .unwrap()
+                .strip_prefix(&canonical_project_dir)?
                 .to_owned();
-            let mut f = File::open(&f_path).unwrap();
-            let file_size = f.metadata().unwrap().len();
+            let mut f = File::open(&f_path)?;
+            let file_size = f.metadata()?.len();
 
             let mut schema = String::with_capacity(file_size as usize);
-            f.read_to_string(&mut schema).unwrap();
+            f.read_to_string(&mut schema)?;
 
             let relative_f_path_str = relative_f_path.to_str().ok_or_else(|| {
                 anyhow::anyhow!("Failed to convert path {relative_f_path:?} to utf-8")
@@ -72,5 +68,8 @@ pub fn get_schema_sources_from_project_path<'a, P: AsRef<Path>>(
         }
     }
 
-    Ok(schemas)
+    Ok(SchemaPackage {
+        config,
+        schemas,
+    })
 }

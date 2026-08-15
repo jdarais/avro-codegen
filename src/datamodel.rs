@@ -10,11 +10,9 @@ use apache_avro::schema::{InnerDecimalSchema, RecordField, Schema, UnionSchema, 
 use serde::Serialize;
 use serde_json::json;
 
-use crate::package::SchemaPackage;
-
 #[derive(Serialize, Clone)]
 pub struct SchemaInfo {
-    pub package: Arc<SchemaPackage>,
+    pub package: Arc<PackageInfo>,
     pub name: String,
     pub namespace: String,
     pub full_name: String,
@@ -27,6 +25,7 @@ pub struct PackageInfo {
     pub name: String,
     pub version: String,
     pub description: String,
+    pub is_external: bool
 }
 
 pub fn denormalize_schema(schema: &Schema, schemata: &[Schema]) -> anyhow::Result<Schema> {

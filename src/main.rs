@@ -5,13 +5,14 @@
 
 mod config;
 mod datamodel;
+mod dependency;
 mod generator;
 mod lua_env;
 mod package;
 mod template_env;
 
 use std::collections::{BTreeMap, HashMap};
-use std::env::{set_current_dir, current_dir};
+use std::env::{current_dir, set_current_dir};
 use std::fs::remove_dir_all;
 use std::path::{Path, MAIN_SEPARATOR_STR};
 use std::sync::Arc;
@@ -22,9 +23,9 @@ use mlua::LuaSerdeExt;
 
 use crate::config::GeneratorConfig;
 use crate::datamodel::{schema_to_json, PackageInfo, SchemaInfo};
-use crate::generator::{Generator, INTERNAL_GENERATOR_NAMES, get_generator};
-use crate::package::get_schema_sources_from_project_path;
+use crate::generator::{get_generator, Generator, INTERNAL_GENERATOR_NAMES};
 use crate::lua_env::{create_lua_env, GeneratorContext};
+use crate::package::get_package_from_project_path;
 
 #[derive(Parser)]
 #[command(version)]
@@ -47,7 +48,7 @@ enum Command {
 
         /// Generator to use. Can be specified multiple times
         #[arg(short, long)]
-        generator: Vec<Arc<str>>
+        generator: Vec<Arc<str>>,
     },
 
     /// Display information about a code generator
@@ -168,15 +169,19 @@ fn collect_schemas(
                     SchemaInfo {
                         package: schema_info.package.clone(),
                         name: fixed_sch.name.name().to_string(),
-                        namespace: fixed_sch.name.namespace().map(str::to_string).unwrap_or_else(String::new),
+                        namespace: fixed_sch
+                            .name
+                            .namespace()
+                            .map(str::to_string)
+                            .unwrap_or_else(String::new),
                         full_name: fullname,
                         file_path: schema_info.file_path.clone(),
-                        schema: schema.clone()
-                    }
+                        schema: schema.clone(),
+                    },
                 );
             }
             _ => { /* Nothing to do */ }
-        }
+        },
         _ => { /* Nothing to do */ }
     }
 }
@@ -188,18 +193,22 @@ fn main() {
         Command::Generate {
             output,
             project_dir,
-            generator
+            generator,
         } => {
             let canonical_project_dir = Path::new(project_dir.as_ref()).canonicalize().unwrap();
             set_current_dir(&canonical_project_dir).unwrap();
 
-            let cfg = config::read_from_toml(&canonical_project_dir).unwrap();
-            let schema_sources = get_schema_sources_from_project_path(&canonical_project_dir, Some(&cfg)).unwrap();
-            
-            let schema_strs: Vec<&str> = schema_sources.iter().map(|source| source.schema.as_ref()).collect();
+            let schema_package =
+                get_package_from_project_path(&canonical_project_dir, false)
+                    .unwrap();
+
+            let schema_strs: Vec<&str> = schema_package.schemas
+                .iter()
+                .map(|source| source.schema.as_ref())
+                .collect();
             let schemas = Schema::parse_list(&schema_strs[..]).unwrap();
             let mut schema_infos: Vec<SchemaInfo> = Vec::new();
-            for (source, schema) in schema_sources.iter().zip(schemas.iter()) {
+            for (source, schema) in schema_package.schemas.iter().zip(schemas.iter()) {
                 let name = schema.name().map(|n| n.name().to_string());
                 let namespace = schema.namespace();
                 let full_name = match &name {
@@ -219,11 +228,12 @@ fn main() {
                 schema_infos.push(SchemaInfo {
                     package: source.package.clone(),
                     name: name.unwrap_or_else(|| String::new()),
-                    namespace: namespace.map(str::to_string).unwrap_or_else(|| String::new()),
+                    namespace: namespace
+                        .map(str::to_string)
+                        .unwrap_or_else(|| String::new()),
                     full_name: full_name.unwrap_or_else(|| String::new()),
                     // TODO: Always provide unix-style path regardless fo platform
-                    file_path: String::from(source.path.as_ref())
-                        .replace(MAIN_SEPARATOR_STR, "/"),
+                    file_path: String::from(source.path.as_ref()).replace(MAIN_SEPARATOR_STR, "/"),
                     schema: schema.clone(),
                 });
             }
@@ -239,18 +249,23 @@ fn main() {
             }
             let all_schemas_json = all_schemas_json;
 
-            let generator_names = if generator.is_empty() { cfg.default_generators.clone() } else { generator };
+            let generator_names = if generator.is_empty() {
+                schema_package.config.default_generators.clone()
+            } else {
+                generator
+            };
 
             let mut generators: Vec<(Arc<str>, Arc<Generator>)> = Vec::new();
             for gen_name in generator_names.iter() {
-                let generator = get_generator(gen_name, &cfg.generator_configs).unwrap();
+                let generator = get_generator(gen_name, &schema_package.config.generator_configs).unwrap();
                 generators.push((gen_name.clone(), Arc::new(generator)));
             }
 
             let package_info = PackageInfo {
-                name: String::from(cfg.name.as_ref()),
-                version: String::from(cfg.version.as_ref()),
-                description: String::from(cfg.description.as_ref()),
+                name: String::from(schema_package.config.name.as_ref()),
+                version: String::from(schema_package.config.version.as_ref()),
+                description: String::from(schema_package.config.description.as_ref()),
+                is_external: false,
             };
 
             for (generator_name, generator) in generators.iter() {
@@ -266,7 +281,7 @@ fn main() {
                     params.insert(String::from(name.as_ref()), val);
                 }
 
-                if let Some(generator_config) = cfg.generator_configs.get(generator_name.as_ref()) {
+                if let Some(generator_config) = schema_package.config.generator_configs.get(generator_name.as_ref()) {
                     for (name, param) in &generator_config.params {
                         params.insert(name.clone(), param.clone());
                     }
@@ -302,7 +317,10 @@ fn main() {
                     .unwrap();
             }
         }
-        Command::Show { generator, project_dir } => {
+        Command::Show {
+            generator,
+            project_dir,
+        } => {
             let canonical_project_dir = Path::new(project_dir.as_ref()).canonicalize().unwrap();
             set_current_dir(&canonical_project_dir).unwrap();
             let cfg_res = config::read_from_toml(&current_dir().unwrap());
@@ -315,7 +333,7 @@ fn main() {
                     &no_generator_configs
                 }
             };
-            
+
             let gen_res = get_generator(generator.as_ref(), generator_configs);
             let generator_info = gen_res.expect("Error getting generator '{generator}': {e}");
 
@@ -332,7 +350,7 @@ fn main() {
                 );
             }
         }
-        Command::List { project_dir} => {
+        Command::List { project_dir } => {
             let canonical_project_dir = Path::new(project_dir.as_ref()).canonicalize().unwrap();
             set_current_dir(&canonical_project_dir).unwrap();
             let cfg_res = config::read_from_toml(&current_dir().unwrap());
@@ -350,11 +368,10 @@ fn main() {
                     generator_names.push(Arc::from(gen.to_owned()));
                 }
             }
-            
+
             for gen in generator_names {
                 println!("{}", gen);
             }
-
         }
     };
 }
